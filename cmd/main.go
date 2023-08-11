@@ -1,13 +1,10 @@
 package main
 
 import (
-	"log"
+	//"github.com/quic-s/quics-client/pkg/app"
 	"os"
 )
 
 func main() {
-	if err := Execute(); err != nil {
-		log.Println(err)
-		os.Exit(1)
-	}
+	os.Exit(Run())
 }
