@@ -5,13 +5,12 @@ import (
 	"testing"
 
 	"github.com/quic-s/quics-client/pkg/utils"
+	"github.com/stretchr/testify/assert"
 )
 
-func TestRtoA(t *testing.T) {
-	abs, err := utils.LocalAbsToRoot("/home/bob/work/utils/src/github.com", "/home/bob")
-	t.Error(abs)
-	t.Error(err)
-
+func TestLocalAbsToRoot(t *testing.T) {
+	abs := utils.LocalAbsToRoot("/home/bob/work/utils/src/github.com", "/home/bob")
+	assert.Equal(t, "/bob/work/utils/src/github.com", abs)
 	// rel := "/home/bob/work/utils/src/github.com"
 	// root := "bob"
 
@@ -24,4 +23,9 @@ func TestRtoA(t *testing.T) {
 	// 	t.Log(result)
 	// }
 
+}
+
+func TestLocalRelToRoot(t *testing.T) {
+	abs, _ := utils.LocalRelToRoot("../qic", "/workspaces/quics-client")
+	assert.Equal(t, "/quics-client/pkg/qic", abs)
 }
