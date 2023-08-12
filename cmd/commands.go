@@ -21,4 +21,5 @@ func Run() int {
 func init() {
 	rootCmd.SetOut(os.Stdout)
 	rootCmd.SetErr(os.Stderr)
+
 }
