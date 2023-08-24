@@ -15,6 +15,7 @@ import (
 )
 
 func CertFile() {
+
 	// generate a new RSA key pair
 	priv, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
@@ -43,24 +44,19 @@ func CertFile() {
 		log.Fatal(err)
 	}
 
-	// encode the certificate to PEM format
+	// encode the certificate, key to PEM format
 	certOut := pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: derBytes})
-
-	// encode the private key to PEM format
 	keyOut := pem.EncodeToMemory(&pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(priv)})
-	homeDir, err := os.UserHomeDir()
-	if err != nil {
-		log.Fatal(err)
-	}
-	quicsDir := filepath.Join(homeDir, "quics")
-	// write the certificate and the key to temporary files
-	certFile, err := os.Create(filepath.Join(quicsDir, "cert-quics-cli.pem"))
+
+	// write the certificate and key to disk
+	quicsDir := GetDirPath()
+	certFile, err := os.Create(filepath.Join(quicsDir, GetViperEnvVariables("QUICS_CLI_CERT_NAME")))
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer certFile.Close()
 
-	keyFile, err := os.Create(filepath.Join(quicsDir, "key-quics-cli.pem"))
+	keyFile, err := os.Create(filepath.Join(quicsDir, GetViperEnvVariables("QUICS_CLI_KEY_NAME")))
 	if err != nil {
 		log.Fatal(err)
 	}

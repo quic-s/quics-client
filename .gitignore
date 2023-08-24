@@ -25,3 +25,6 @@ go.work
 
 # DevContainer
 .devcontainer
+
+# complied file
+qic

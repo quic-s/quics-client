@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"os"
 	"path/filepath"
 
 	"github.com/quic-go/quic-go"
@@ -14,6 +13,7 @@ import (
 )
 
 func RestServerStart() {
+
 	go func() {
 		// log.Println(http.ListenAndServe(":6060", nil))
 	}()
@@ -24,20 +24,16 @@ func RestServerStart() {
 		QuicConfig: &qconf,
 		Addr:       ":6121",
 	}
-	tempDir, err := os.UserHomeDir()
-	if err != nil {
-		log.Fatal(err)
-	}
-	quicsDir := filepath.Join(tempDir, "quics")
-	certDir := filepath.Join(quicsDir, "cert-quics-cli.pem")
-	keyDir := filepath.Join(quicsDir, "key-quics-cli.pem")
+
+	quicsDir := utils.GetDirPath()
+	certDir := filepath.Join(quicsDir, utils.GetViperEnvVariables("QUICS_CLI_CERT_NAME"))
+	keyDir := filepath.Join(quicsDir, utils.GetViperEnvVariables("QUICS_CLI_KEY_NAME"))
 
 	// load the certificate and the key from the files
-	_, err = tls.LoadX509KeyPair(certDir, keyDir)
+	_, err := tls.LoadX509KeyPair(certDir, keyDir)
 	if err != nil {
 		utils.CertFile()
 	}
-	// fmt.Println("cert : ", cert.)
 
 	log.Println(server.ListenAndServeTLS(certDir, keyDir))
 
