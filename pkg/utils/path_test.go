@@ -26,6 +26,6 @@ func TestLocalAbsToRoot(t *testing.T) {
 }
 
 func TestLocalRelToRoot(t *testing.T) {
-	abs, _ := utils.LocalRelToRoot("../qic", "/workspaces/quics-client")
+	abs := utils.LocalRelToRoot("../qic", "/workspaces/quics-client")
 	assert.Equal(t, "/quics-client/pkg/qic", abs)
 }

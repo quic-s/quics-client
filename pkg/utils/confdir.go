@@ -33,3 +33,23 @@ func GetDirPath() string {
 	}
 	return filepath.Join(tempDir, "quics")
 }
+
+// read .qis.env file if it is existed
+func ReadEnvFile() {
+	envPath := filepath.Join(GetDirPath(), ".qic.env")
+	file, err := os.Open(envPath)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	defer file.Close()
+
+	// 파일 전체 읽기
+	data, err := os.ReadFile(file.Name())
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// 파일 내용 출력
+	log.Println(string(data))
+}

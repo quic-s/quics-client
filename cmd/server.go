@@ -2,31 +2,44 @@ package main
 
 import (
 	"fmt"
-	"github.com/spf13/cobra"
-	"net"
 	"os"
 	"os/exec"
+
+	qhttp "github.com/quic-s/quics-client/pkg/http"
+	"github.com/quic-s/quics-client/pkg/utils"
+	"github.com/spf13/cobra"
+)
+
+const (
+	SIpCommand      = "server-host"
+	SIpShortCommand = "d"
+
+	SPortCommand      = "server-port"
+	SPortShortCommand = "p"
+
+	MyPortCommand      = "rest-port"
+	MyPortShortCommand = "r"
 )
 
 var (
-	Server string
+	SIp    string
 	SPort  string
-	Host   string
-	HPort  string
+	MyPort string
 )
 
 func init() {
 	startCmd := StartCmd()
 
-	startCmd.Flags().StringVarP(&Server, "server", "s", "", "server-IP for make connection")
-	startCmd.Flags().StringVarP(&SPort, "port", "p", "", "server-Port for make connection")
+	// startCmd.Flags().StringVarP(&SIp, SIpCommand, "d", "", "server domain/Ip for make connection")
+	// startCmd.Flags().StringVarP(&SPort, SPortCommand, "p", "", "server Port for make connection")
+	startCmd.Flags().StringVarP(&MyPort, MyPortCommand, "r", "", "my Port for make connection")
 
-	if err := startCmd.MarkFlagRequired("server"); err != nil {
-		fmt.Println(err)
-	}
-	if err := startCmd.MarkFlagRequired("port"); err != nil {
-		fmt.Println(err)
-	}
+	// if err := startCmd.MarkFlagRequired(SIpCommand); err != nil {
+	// 	fmt.Println(err)
+	// }
+	// if err := startCmd.MarkFlagRequired(SPortCommand); err != nil {
+	// 	fmt.Println(err)
+	// }
 
 	rootCmd.AddCommand(startCmd)
 	rootCmd.AddCommand(ShutdownCmd())
@@ -36,36 +49,32 @@ func init() {
 
 func StartCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:   "start [options]",
+		Use:   "start",
 		Short: "start Quics Client Server ",
 		Run: func(cmd *cobra.Command, args []string) {
-			fmt.Println("\n Start Quics-Client \n")
-
-			hostname, err := os.Hostname()
-			if err != nil {
-				fmt.Println(err)
-				return
-			}
-
-			addrs, err := net.LookupIP(hostname)
-			if err != nil {
-				fmt.Println(err)
-				return
-			}
-			// IP 주소 중 첫 번째 것을 선택한다
-			ip := addrs[0].String()
-
-			// port := os.Getenv("PORT")
-			// if port == "" {
-			// 	// 환경 변수 PORT가 없으면, 기본값으로 8080을 사용한다
-			// 	port = "8080"
+			// 현재 IP 주소 중 첫 번째 것을 선택한다
+			// hostname, err := os.Hostname()
+			// if err != nil {
+			// 	fmt.Println(err)
+			// 	return
 			// }
 
-			// 현재 아이피와 포트를 출력한다
-			fmt.Println("Local IP    ", ip)
-			fmt.Println("Server IP   ", Server)
-			fmt.Println("Server Port ", SPort)
+			// addrs, err := net.LookupIP(hostname)
+			// if err != nil {
+			// 	fmt.Println(err)
+			// 	return
+			// }
 
+			// ip := addrs[0].String()
+
+			// 아이피와 포트를 출력한다
+			if MyPort != "" {
+				utils.WriteViperEnvVariables("PORT", MyPort)
+			}
+			// utils.WriteViperEnvVariables("SERVER_IP", SIp)
+			// utils.WriteViperEnvVariables("SERVER_PORT", SPort)
+
+			qhttp.RestServerStart()
 		},
 	}
 }

@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"log"
 	"path"
 	"path/filepath"
 )
@@ -14,13 +15,13 @@ func LocalAbsToRoot(abs string, root string) string {
 }
 
 // LocalRelToRoot converts a relative path to a relative path to the root
-func LocalRelToRoot(rel string, root string) (string, error) {
+func LocalRelToRoot(rel string, root string) string {
 
 	abs, err := filepath.Abs(rel)
 	if err != nil {
-		return "", err
+		log.Panic(err)
 
 	}
-	return LocalAbsToRoot(abs, root), nil
+	return LocalAbsToRoot(abs, root)
 
 }

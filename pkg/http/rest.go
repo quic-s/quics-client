@@ -14,15 +14,12 @@ import (
 
 func RestServerStart() {
 
-	go func() {
-		// log.Println(http.ListenAndServe(":6060", nil))
-	}()
 	handler := setupHandler()
 	qconf := quic.Config{}
 	server := http3.Server{
 		Handler:    handler,
 		QuicConfig: &qconf,
-		Addr:       ":6121",
+		Addr:       "0.0.0.0:" + utils.GetViperEnvVariables("PORT"),
 	}
 
 	quicsDir := utils.GetDirPath()
@@ -35,7 +32,10 @@ func RestServerStart() {
 		utils.CertFile()
 	}
 
-	log.Println(server.ListenAndServeTLS(certDir, keyDir))
+	err = server.ListenAndServeTLS(certDir, keyDir)
+	if err != nil {
+		log.Fatal("Client Server Error : ", err)
+	}
 
 }
 

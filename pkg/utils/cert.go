@@ -4,14 +4,12 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
-	"crypto/x509/pkix"
 	"encoding/pem"
 	"path/filepath"
 
 	"log"
 	"math/big"
 	"os"
-	"time"
 )
 
 func CertFile() {
@@ -25,17 +23,6 @@ func CertFile() {
 	// create a template for the certificate
 	template := x509.Certificate{
 		SerialNumber: big.NewInt(1),
-		Subject: pkix.Name{
-			CommonName:   "localhost",
-			Organization: []string{"test"},
-		},
-		NotBefore:             time.Now(),
-		NotAfter:              time.Now().Add(time.Hour * 24),
-		KeyUsage:              x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature,
-		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
-		BasicConstraintsValid: true,
-		IsCA:                  true,
-		DNSNames:              []string{"localhost"},
 	}
 
 	// create a self-signed certificate
