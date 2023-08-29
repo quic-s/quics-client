@@ -36,7 +36,7 @@ func CertFile() {
 	keyOut := pem.EncodeToMemory(&pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(priv)})
 
 	// write the certificate and key to disk
-	quicsDir := GetDirPath()
+	quicsDir := GetQuicsDirPath()
 	certFile, err := os.Create(filepath.Join(quicsDir, GetViperEnvVariables("QUICS_CLI_CERT_NAME")))
 	if err != nil {
 		log.Fatal(err)

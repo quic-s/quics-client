@@ -36,9 +36,6 @@ func init() {
 	if err := ChangeServerConfig.MarkFlagRequired(HostCommand); err != nil {
 		log.Println(err)
 	}
-	if err := ChangeServerConfig.MarkFlagRequired(PortCommand); err != nil {
-		log.Println(err)
-	}
 
 	configCmd.AddCommand(ChangeServerConfig)
 
@@ -72,7 +69,9 @@ func ChangeServerConfig() *cobra.Command {
 		Short: "change server config",
 		Run: func(cmd *cobra.Command, args []string) {
 			utils.WriteViperEnvVariables("SERVER_IP", SIp)
-			utils.WriteViperEnvVariables("SERVER_PORT", SPort)
+			if SPort == "" {
+				utils.WriteViperEnvVariables("SERVER_PORT", SPort)
+			}
 		},
 	}
 

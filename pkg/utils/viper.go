@@ -12,7 +12,7 @@ import (
 // return the value of the key
 func GetViperEnvVariables(key string) string {
 
-	envPath := filepath.Join(GetDirPath(), ".qic.env")
+	envPath := filepath.Join(GetQuicsDirPath(), ".qic.env")
 	_, err := os.Stat(envPath)
 	if err != nil {
 		viper.SetConfigFile(".env")
@@ -39,7 +39,7 @@ func GetViperEnvVariables(key string) string {
 }
 
 func WriteViperEnvVariables(key string, value string) {
-	envPath := filepath.Join(GetDirPath(), ".qic.env") // force to write
+	envPath := filepath.Join(GetQuicsDirPath(), ".qic.env") // force to write
 	_, err := os.Stat(envPath)
 	if os.IsNotExist(err) {
 		viper.SetConfigFile(".env")

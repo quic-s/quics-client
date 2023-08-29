@@ -1,4 +1,4 @@
-package http_test
+package rest_test
 
 import (
 	"fmt"

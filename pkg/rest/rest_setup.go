@@ -1,4 +1,4 @@
-package http
+package rest
 
 import (
 	"crypto/tls"
@@ -14,15 +14,18 @@ import (
 
 func RestServerStart() {
 
+	// badger.InitDB()
+
 	handler := setupHandler()
 	qconf := quic.Config{}
 	server := http3.Server{
 		Handler:    handler,
 		QuicConfig: &qconf,
-		Addr:       "0.0.0.0:" + utils.GetViperEnvVariables("PORT"),
+
+		Addr: "0.0.0.0:" + utils.GetViperEnvVariables("PORT"),
 	}
 
-	quicsDir := utils.GetDirPath()
+	quicsDir := utils.GetQuicsDirPath()
 	certDir := filepath.Join(quicsDir, utils.GetViperEnvVariables("QUICS_CLI_CERT_NAME"))
 	keyDir := filepath.Join(quicsDir, utils.GetViperEnvVariables("QUICS_CLI_KEY_NAME"))
 

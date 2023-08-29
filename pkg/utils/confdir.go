@@ -8,7 +8,7 @@ import (
 
 // CreateDirIfNotExisted creates the quics folder if it does not exist
 func CreateDirIfNotExisted() {
-	quicsDir := GetDirPath()
+	quicsDir := GetQuicsDirPath()
 
 	_, err := os.Stat(quicsDir)
 
@@ -24,8 +24,8 @@ func CreateDirIfNotExisted() {
 
 }
 
-// GetDirPath returns the path of the quics folder
-func GetDirPath() string {
+// GetQuicsDirPath returns the path of the quics folder
+func GetQuicsDirPath() string {
 
 	tempDir, err := os.UserHomeDir()
 	if err != nil {
@@ -36,7 +36,7 @@ func GetDirPath() string {
 
 // read .qis.env file if it is existed
 func ReadEnvFile() {
-	envPath := filepath.Join(GetDirPath(), ".qic.env")
+	envPath := filepath.Join(GetQuicsDirPath(), ".qic.env")
 	file, err := os.Open(envPath)
 	if err != nil {
 		log.Fatal(err)

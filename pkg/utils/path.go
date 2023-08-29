@@ -7,6 +7,7 @@ import (
 )
 
 // LocalAbsToRoot converts an absolute path to a relative path to the root
+// ex) LocalAbsToRoot("/a/b/c", "a/b") -> "/c"
 func LocalAbsToRoot(abs string, root string) string {
 
 	rootdir, _ := path.Split(root)
@@ -15,6 +16,7 @@ func LocalAbsToRoot(abs string, root string) string {
 }
 
 // LocalRelToRoot converts a relative path to a relative path to the root
+// ex) LocalRelToRoot("./b/c", "a/b") -> "/c"
 func LocalRelToRoot(rel string, root string) string {
 
 	abs, err := filepath.Abs(rel)
