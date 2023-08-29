@@ -1,13 +1,10 @@
 package main
 
-import (
-	"github.com/quic-s/quics-client/pkg/quic"
-)
+import "github.com/quic-s/quics-client/pkg/utils"
 
 func main() {
 	//os.Exit(Run())
 	// utils.CreateDirIfNotExisted()
-	// http.RestServerStart()
-	quic.ClientMessage("get", []byte("test"))
-
+	//http.RestServerStart()
+	utils.GetRootDir()
 }

@@ -44,7 +44,7 @@ func StartCmd() *cobra.Command {
 		Short: "start Quics Client Server ",
 		Run: func(cmd *cobra.Command, args []string) {
 			if MyPort != "" {
-				utils.WriteViperEnvVariables("PORT", MyPort)
+				utils.WriteViperEnvVariables("REST_SERVER_PORT", MyPort)
 			}
 			qhttp.RestServerStart()
 

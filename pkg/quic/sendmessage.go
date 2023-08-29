@@ -38,15 +38,13 @@ func ClientMessage(msgtype string, message []byte) {
 	if err != nil {
 		log.Panicln(err)
 	}
-	log.Println("client Created")
-	// start client
+
+	// start quics client
 	err = quicClient.Dial(host + ":" + port)
 	if err != nil {
 		log.Panicln(err)
 	}
 
-	log.Println("client Connected")
-	// send message to server
 	quicClient.SendMessage(msgtype, message)
 
 	// delay for waiting message sent to server

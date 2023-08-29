@@ -22,7 +22,7 @@ func RestServerStart() {
 		Handler:    handler,
 		QuicConfig: &qconf,
 
-		Addr: "0.0.0.0:" + utils.GetViperEnvVariables("PORT"),
+		Addr: "0.0.0.0:" + utils.GetViperEnvVariables("REST_SERVER_PORT"),
 	}
 
 	quicsDir := utils.GetQuicsDirPath()

@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	HostCommand      = "host"
+	HostCommand      = "quics_host"
 	HostShortCommand = "H"
 
 	PortCommand      = "port"
@@ -68,9 +68,9 @@ func ChangeServerConfig() *cobra.Command {
 		Use:   "server",
 		Short: "change server config",
 		Run: func(cmd *cobra.Command, args []string) {
-			utils.WriteViperEnvVariables("SERVER_IP", SIp)
+			utils.WriteViperEnvVariables("QUICS_SERVER_HOST", SIp)
 			if SPort == "" {
-				utils.WriteViperEnvVariables("SERVER_PORT", SPort)
+				utils.WriteViperEnvVariables("QUICS_SERVER_PORT", SPort)
 			}
 		},
 	}
@@ -82,7 +82,9 @@ func ChangeRootDirConfig() *cobra.Command {
 		Use:   "root",
 		Short: "change root directory config",
 		Run: func(cmd *cobra.Command, args []string) {
-			utils.WriteViperEnvVariables(DirNN, DirAbsPath)
+			//TODO 중복된 키, 중복된 value 금지
+
+			utils.WriteViperEnvVariables("ROOT."+DirNN, DirAbsPath)
 		},
 	}
 

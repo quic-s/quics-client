@@ -1,61 +1,71 @@
 package sync
 
-// func DirWatchStart() {
-// 	// Create a new watcher.
-// 	watcher, err := fsnotify.NewWatcher()
-// 	if err != nil {
-// 		log.Fatal(err)
-// 	}
-// 	defer watcher.Close()
+import (
+	"log"
+	"os"
+	"path/filepath"
 
-// 	// Define a channel to receive events.
-// 	done := make(chan bool)
+	"github.com/fsnotify/fsnotify"
+	qc "github.com/quic-s/quics-client/pkg/quic"
+	"github.com/quic-s/quics-client/pkg/utils"
+)
 
-// 	go func() {
-// 		for {
-// 			select {
-// 			case event, ok := <-watcher.Events:
-// 				if !ok {
-// 					return
-// 				}
-// 				log.Println("event:", event)
+func DirWatchStart(rootpath string) { // rootpath : /root/path/like/this
+	// Create a new watcher.
+	watcher, err := fsnotify.NewWatcher()
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer watcher.Close()
 
-// 				//이벤트가 일어난 파일만 전송
-// 				filepath := event.Name
+	// Define a channel to receive events.
+	done := make(chan bool)
 
-// 				if info, err := os.Stat(filepath); event.Op&fsnotify.Create == fsnotify.Create && err == nil && info.IsDir() { // 디렉토리 인것
-// 					watcher.Add(filepath)
-// 				}
-// 				if info, err := os.Stat(filepath); event.Op&fsnotify.Create == fsnotify.Create && err == nil && !info.IsDir() { //파일 인 것
-// 					//RestClientFile(filepath)
-// 				}
+	go func() {
+		for {
+			select {
+			case event, ok := <-watcher.Events:
+				if !ok {
+					return
+				}
+				log.Println("event:", event)
 
-// 				if event.Op&fsnotify.Remove == fsnotify.Remove {
-// 					filepath = utils.LocalAbsToRoot(filepath, getAccelerDir())
-// 					qc.ClientMessage("removed", []byte(filepath))
-// 				}
+				//이벤트가 일어난 파일만 전송
+				filepath := event.Name
 
-// 				if event.Op&fsnotify.Write == fsnotify.Write {
+				if info, err := os.Stat(filepath); event.Op&fsnotify.Create == fsnotify.Create && err == nil && info.IsDir() { // 디렉토리 인것
+					watcher.Add(filepath)
+				}
+				if info, err := os.Stat(filepath); event.Op&fsnotify.Create == fsnotify.Create && err == nil && !info.IsDir() { //파일 인 것
+					//RestClientFile(filepath)
+				}
 
-// 					RestClientFile(filepath)
-// 				}
-// 			case err, ok := <-watcher.Errors:
-// 				if !ok {
-// 					return
-// 				}
-// 				log.Println("error:", err)
-// 			}
-// 		}
-// 	}()
+				if event.Op&fsnotify.Remove == fsnotify.Remove {
+					filepath = utils.LocalAbsToRoot(filepath, rootpath)
+					qc.ClientMessage(qc.DELETE, []byte(filepath))
+				}
 
-// 	filepath.Walk(getAccelerDir(), func(path string, info os.FileInfo, err error) error {
-// 		if info.IsDir() {
-// 			watcher.Add(path)
-// 		}
-// 		return nil
-// 	})
+				if event.Op&fsnotify.Write == fsnotify.Write {
 
-// 	// Wait until the channel is closed.
-// 	<-done
+					//RestClientFile(filepath)
+				}
+			case err, ok := <-watcher.Errors:
+				if !ok {
+					return
+				}
+				log.Println("error:", err)
+			}
+		}
+	}()
 
-// }
+	filepath.Walk(rootpath, func(path string, info os.FileInfo, err error) error {
+		if info.IsDir() {
+			watcher.Add(path)
+		}
+		return nil
+	})
+
+	// Wait until the channel is closed.
+	<-done
+
+}
