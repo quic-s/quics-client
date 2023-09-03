@@ -8,7 +8,11 @@ import (
 )
 
 // Declare a global variable for the DB.
-var badgerdb *badger.DB
+var Badgerdb *badger.DB
+
+const (
+	META string = "META"
+)
 
 // Define a function to open the DB.
 func init() {
@@ -16,7 +20,7 @@ func init() {
 	// It will be created if it doesn't exist.
 	opts := badger.DefaultOptions(utils.GetQuicsDirPath() + "./badger")
 	db, err := badger.Open(opts)
-	badgerdb = db
+	Badgerdb = db
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -25,9 +29,8 @@ func init() {
 	defer closeDB()
 }
 
-// Define a function to close the DB.
 func closeDB() {
-	if err := badgerdb.Close(); err != nil {
+	if err := Badgerdb.Close(); err != nil {
 		log.Fatal(err)
 	}
 }

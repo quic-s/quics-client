@@ -1,11 +1,11 @@
 package quic
 
-import "github.com/quic-s/quics-client/pkg/utils"
+import "github.com/quic-s/quics-client/pkg/viper"
 
 var host string
 var port string
 
 func init() {
-	host = utils.GetViperEnvVariables("QUICS_SERVER_HOST")
-	port = utils.GetViperEnvVariables("QUICS_SERVER_PORT")
+	host = viper.GetViperEnvVariables("QUICS_SERVER_HOST")
+	port = viper.GetViperEnvVariables("QUICS_SERVER_PORT")
 }

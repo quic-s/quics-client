@@ -10,6 +10,8 @@ import (
 	"log"
 	"math/big"
 	"os"
+
+	"github.com/quic-s/quics-client/pkg/viper"
 )
 
 func CertFile() {
@@ -37,13 +39,13 @@ func CertFile() {
 
 	// write the certificate and key to disk
 	quicsDir := GetQuicsDirPath()
-	certFile, err := os.Create(filepath.Join(quicsDir, GetViperEnvVariables("QUICS_CLI_CERT_NAME")))
+	certFile, err := os.Create(filepath.Join(quicsDir, viper.GetViperEnvVariables("QUICS_CLI_CERT_NAME")))
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer certFile.Close()
 
-	keyFile, err := os.Create(filepath.Join(quicsDir, GetViperEnvVariables("QUICS_CLI_KEY_NAME")))
+	keyFile, err := os.Create(filepath.Join(quicsDir, viper.GetViperEnvVariables("QUICS_CLI_KEY_NAME")))
 	if err != nil {
 		log.Fatal(err)
 	}

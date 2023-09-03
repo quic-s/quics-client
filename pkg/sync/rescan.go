@@ -1,10 +1,9 @@
 package sync
 
-func RescanAllDir() {
+import (
+	qc "github.com/quic-s/quics-client/pkg/quic"
+)
 
-}
-
-// TODO Root가 아닐시 예외처리
-func RescanCertainDir(rootpath string) {
-
+func Rescan() {
+	qc.ClientMessage(qc.RESCAN, []byte("reset the time"))
 }

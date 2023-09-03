@@ -1,16 +1,43 @@
-package rest
+package app
 
 import (
 	"crypto/tls"
 	"fmt"
 	"log"
 	"net/http"
+	"os"
+	"os/exec"
 	"path/filepath"
 
 	"github.com/quic-go/quic-go"
 	"github.com/quic-go/quic-go/http3"
 	"github.com/quic-s/quics-client/pkg/utils"
+	"github.com/quic-s/quics-client/pkg/viper"
 )
+
+func Reboot() {
+	log.Println("\n\trebooting ...")
+
+	str, err := os.Executable()
+
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+	newProcess := exec.Command(str)
+	newProcess.Stdout = os.Stdout
+	newProcess.Stderr = os.Stderr
+	newProcess.Stdin = os.Stdin
+	newProcess.Env = os.Environ()
+
+	err = newProcess.Start()
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+	os.Exit(0)
+
+}
 
 func RestServerStart() {
 
@@ -22,12 +49,12 @@ func RestServerStart() {
 		Handler:    handler,
 		QuicConfig: &qconf,
 
-		Addr: "0.0.0.0:" + utils.GetViperEnvVariables("REST_SERVER_PORT"),
+		Addr: "0.0.0.0:" + viper.GetViperEnvVariables("REST_SERVER_PORT"),
 	}
 
 	quicsDir := utils.GetQuicsDirPath()
-	certDir := filepath.Join(quicsDir, utils.GetViperEnvVariables("QUICS_CLI_CERT_NAME"))
-	keyDir := filepath.Join(quicsDir, utils.GetViperEnvVariables("QUICS_CLI_KEY_NAME"))
+	certDir := filepath.Join(quicsDir, viper.GetViperEnvVariables("QUICS_CLI_CERT_NAME"))
+	keyDir := filepath.Join(quicsDir, viper.GetViperEnvVariables("QUICS_CLI_KEY_NAME"))
 
 	// load the certificate and the key from the files
 	_, err := tls.LoadX509KeyPair(certDir, keyDir)

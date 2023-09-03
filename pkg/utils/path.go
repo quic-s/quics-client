@@ -27,3 +27,12 @@ func LocalRelToRoot(rel string, root string) string {
 	return LocalAbsToRoot(abs, root)
 
 }
+
+// ex) SplitPathWithRoot("/a/b/c", "a/b") -> "/a/b", "/c"
+func SplitPathWithRoot(path string, root string) (string, string) {
+
+	rootdir, _ := filepath.Split(root)
+	afterPath := "/" + path[len(rootdir):]
+	beforePath := path[:len(rootdir)]
+	return beforePath, afterPath
+}

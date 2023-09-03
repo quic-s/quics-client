@@ -1,30 +1,73 @@
 package quic
 
-//qp "github.com/quic-s/quics-protocol"
+import (
+	"crypto/tls"
+	"log"
+	"net"
+	"strconv"
+	"time"
 
-// func ClientFile(filepath string) {
+	qp "github.com/quic-s/quics-protocol"
+)
 
-// 	// initialize client
-// 	quicClient, err := qp.New()
-// 	if err != nil {
-// 		log.Panicln(err)
-// 	}
+// ex) ClientFile("/Users/username/Desktop/test.txt")
+func ClientFile(filepath string) {
 
-// 	// start client
-// 	err = quicClient.Dial(host + ":" + port)
-// 	if err != nil {
-// 		log.Panicln(err)
-// 	}
+	quicClient, err := qp.New(qp.LOG_LEVEL_INFO)
+	if err != nil {
+		log.Println("quics-protocol: ", err)
+	}
 
-// 	file, err := os.ReadFile(filepath)
-// 	if err != nil {
-// 		log.Println(err)
-// 		return
+	tlsConf := &tls.Config{
+		InsecureSkipVerify: true,
+		NextProtos:         []string{"quics-protocol"},
+	}
+	// start client
+	parsedPort, _ := strconv.Atoi(host)
+	conn, err := quicClient.Dial(&net.UDPAddr{IP: net.IP(host), Port: parsedPort}, tlsConf)
+	if err != nil {
+		log.Println("quics-protocol: ", err)
+	}
+	if err != nil {
+		log.Println("quics-protocol: ", err)
+	}
 
-// 	}
-// 	quicClient.SendFile(utils.LocalAbsToRoot(filepath, getAccelerDir()), file)
+	err = conn.SendFile(FILE, filepath)
+	if err != nil {
+		log.Println(err)
+	}
 
-// 	// delay for waiting message sent to server
-// 	time.Sleep(3 * time.Second)
-// 	quicClient.Close()
-// }
+	// delay for waiting message sent to server
+	time.Sleep(3 * time.Second)
+	quicClient.Close()
+}
+
+func ClientFileWithMessage(filepath string, msgtype string, message []byte) {
+	quicClient, err := qp.New(qp.LOG_LEVEL_INFO)
+	if err != nil {
+		log.Println("quics-protocol: ", err)
+	}
+
+	tlsConf := &tls.Config{
+		InsecureSkipVerify: true,
+		NextProtos:         []string{"quics-protocol"},
+	}
+	// start client
+	parsedPort, _ := strconv.Atoi(host)
+	conn, err := quicClient.Dial(&net.UDPAddr{IP: net.IP(host), Port: parsedPort}, tlsConf)
+	if err != nil {
+		log.Println("quics-protocol: ", err)
+	}
+	if err != nil {
+		log.Println("quics-protocol: ", err)
+	}
+
+	err = conn.SendFileWithMessage(msgtype, message, filepath)
+	if err != nil {
+		log.Println(err)
+	}
+
+	// delay for waiting message sent to server
+	time.Sleep(3 * time.Second)
+	quicClient.Close()
+}

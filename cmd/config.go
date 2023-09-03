@@ -4,11 +4,12 @@ import (
 	"log"
 
 	"github.com/quic-s/quics-client/pkg/utils"
+	"github.com/quic-s/quics-client/pkg/viper"
 	"github.com/spf13/cobra"
 )
 
 const (
-	HostCommand      = "quics_host"
+	HostCommand      = "host"
 	HostShortCommand = "H"
 
 	PortCommand      = "port"
@@ -68,9 +69,9 @@ func ChangeServerConfig() *cobra.Command {
 		Use:   "server",
 		Short: "change server config",
 		Run: func(cmd *cobra.Command, args []string) {
-			utils.WriteViperEnvVariables("QUICS_SERVER_HOST", SIp)
+			viper.WriteViperEnvVariables("QUICS_SERVER_HOST", SIp)
 			if SPort == "" {
-				utils.WriteViperEnvVariables("QUICS_SERVER_PORT", SPort)
+				viper.WriteViperEnvVariables("QUICS_SERVER_PORT", SPort)
 			}
 		},
 	}
@@ -83,8 +84,14 @@ func ChangeRootDirConfig() *cobra.Command {
 		Short: "change root directory config",
 		Run: func(cmd *cobra.Command, args []string) {
 			//TODO 중복된 키, 중복된 value 금지
+			if utils.IsDuplicateKey(DirNN) {
+				log.Fatal("duplicate key, cannot overwrite")
+			}
+			if utils.IsDuplicateValue(DirAbsPath) {
+				log.Fatal("duplicate value, cannot overwrite")
+			}
 
-			utils.WriteViperEnvVariables("ROOT."+DirNN, DirAbsPath)
+			viper.WriteViperEnvVariables("ROOT."+DirNN, DirAbsPath)
 		},
 	}
 

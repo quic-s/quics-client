@@ -1,8 +1,85 @@
 package sync
 
-// 서버로 전송
-type RootDirectory struct {
-	UUID string
-	Path string // 로컬의 절대경로 (ex: /home/user/Quics)
-	Date string
+import (
+	"bytes"
+	"encoding/gob"
+)
+
+type SyncMetadata struct { // Per file
+	Path                string // key
+	LastUpdateTimestamp uint64 // Local File changed time
+	LastUpdateHash      string
+	LastSyncTimestamp   uint64 // Sync Success Time
+	LastSyncHash        string
+}
+
+type PleaseSync struct {
+	Uuid string
+	// e.g., /home/ubuntu/rootDir/file
+	BeforePath          string // /home/ubuntu
+	AfterPath           string // /rootDir/file
+	LastUpdateTimestamp uint64
+	LastUpdateHash      string
+}
+
+type MustSync struct {
+	LatestHash          string // depends on server
+	LatestSyncTimestamp uint64 // depends on server
+	BeforePath          string
+	AfterPath           string
+}
+
+func (syncMetadata *SyncMetadata) Encode() []byte {
+	buffer := bytes.Buffer{}
+	encoder := gob.NewEncoder(&buffer)
+	if err := encoder.Encode(syncMetadata); err != nil {
+		panic(err)
+	}
+
+	return buffer.Bytes()
+}
+func (syncMetadata *SyncMetadata) Decode(data []byte) {
+	buffer := bytes.NewBuffer(data)
+	decoder := gob.NewDecoder(buffer)
+	if err := decoder.Decode(syncMetadata); err != nil {
+		panic(err)
+	}
+
+}
+
+func (pleaseSync *PleaseSync) Encode() []byte {
+	buffer := bytes.Buffer{}
+	encoder := gob.NewEncoder(&buffer)
+	if err := encoder.Encode(pleaseSync); err != nil {
+		panic(err)
+	}
+
+	return buffer.Bytes()
+}
+func (pleaseSync *PleaseSync) Decode(data []byte) {
+	buffer := bytes.NewBuffer(data)
+	decoder := gob.NewDecoder(buffer)
+	if err := decoder.Decode(pleaseSync); err != nil {
+		panic(err)
+	}
+
+}
+
+func (mustSync *MustSync) Encode() []byte {
+	buffer := bytes.Buffer{}
+	encoder := gob.NewEncoder(&buffer)
+	if err := encoder.Encode(mustSync); err != nil {
+		panic(err)
+	}
+
+	return buffer.Bytes()
+}
+
+func (mustSync *MustSync) Decode(data []byte) {
+	buffer := bytes.NewBuffer(data)
+	decoder := gob.NewDecoder(buffer)
+	if err := decoder.Decode(mustSync); err != nil {
+		panic(err)
+	}
+
 }

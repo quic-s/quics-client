@@ -37,7 +37,7 @@ func GetQuicsDirPath() string {
 	if err != nil {
 		log.Fatal(err)
 	}
-	return filepath.Join(tempDir, "quics")
+	return filepath.Join(tempDir, ".quics")
 }
 
 // read .qis.env file if it is existed
@@ -56,10 +56,7 @@ func ReadEnvFile() []map[string]string {
 		log.Fatal(err)
 	}
 
-	//Key-value 형태의 리스트로 만듦
 	dataStr := string(data)
-
-	// 문자열을 줄 단위로 분리
 	lines := strings.Split(dataStr, "\n")
 
 	// 줄마다 키와 값으로 분리하고 리스트에 추가
@@ -69,21 +66,19 @@ func ReadEnvFile() []map[string]string {
 		if line == "" {
 			continue
 		}
-		// 줄을 공백으로 분리
 		parts := strings.Split(line, "=")
-		// 첫 번째 부분을 키로, 나머지 부분을 값으로 합쳐서 맵에 저장
 		key := parts[0]
 		value := strings.Join(parts[1:], " ")
 		kvMap := map[string]string{key: value}
-		// 맵을 리스트에 추가
 		kvList = append(kvList, kvMap)
 	}
-	// 파일 내용 출력
+
 	log.Println(kvList)
 	return kvList
 }
 
-func GetRootDir() []map[string]string {
+func GetRootDirs() []map[string]string {
+	// ex) GetRootDirs() -> [{"ROOT.b": "/home/user/a/b"}, {"ROOT.d": "/home/user/c/d"}]
 	rawList := ReadEnvFile()
 	kvList := []map[string]string{}
 	for _, kvMap := range rawList {
@@ -96,11 +91,52 @@ func GetRootDir() []map[string]string {
 	return kvList
 }
 
-func IsRootDir(rootpath string) bool {
-	rootDirList := GetRootDir()
+func GetRootDir(key string) string {
+	// ex) GetRootDir("b") -> "/home/user/a/b"
+	key = "ROOT." + key
+	rootDirList := GetRootDirs()
 	for _, kvMap := range rootDirList {
-		for key, _ := range kvMap {
-			if key == rootpath {
+		for k, v := range kvMap {
+			if k == key {
+				return v
+			}
+		}
+	}
+	return ""
+}
+
+func IsRootDir(rootpath string) bool {
+	// ex) IsRootDir("/home/user/a/b") -> true
+	rootDirList := GetRootDirs()
+	for _, kvMap := range rootDirList {
+		for _, value := range kvMap {
+			if value == rootpath {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func IsDuplicateKey(key string) bool {
+	// ex) IsDuplicateKey("b") -> true
+	rootDirList := GetRootDirs()
+	for _, kvMap := range rootDirList {
+		for k, _ := range kvMap {
+			if k == "ROOT."+key {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func IsDuplicateValue(value string) bool {
+	// ex) IsDuplicateValue("/home/user/a/b") -> true
+	rootDirList := GetRootDirs()
+	for _, kvMap := range rootDirList {
+		for _, v := range kvMap {
+			if v == value {
 				return true
 			}
 		}

@@ -1,7 +1,10 @@
 package quic
 
 import (
+	"crypto/tls"
 	"log"
+	"net"
+	"strconv"
 	"time"
 
 	qp "github.com/quic-s/quics-protocol"
@@ -16,37 +19,36 @@ const (
 	RENAME   string = "RENAME"
 	CLIENT   string = "CLIENT"
 	ROOTDIR  string = "ROOTDIR" // /root/path/like/this
+	RESCAN   string = "RESCAN"
+	HISTORY  string = "HISTORY"
+	SHARING  string = "SHARING"
+	FILE     string = "FILE"
 )
 
-type CRDBody struct {
-	Uuid     string `json:"uuid"`
-	FilePath string `json:"filepath"`
-}
-
-type ClientBody struct {
-	Ip string `json:"ip"`
-}
-
-type RootdirBody struct {
-	Uuid     string `json:"uuid"`
-	RootPath string `json:"rootpath"`
-}
-
 func ClientMessage(msgtype string, message []byte) {
-	// initialize client
-	quicClient, err := qp.New()
+	quicClient, err := qp.New(qp.LOG_LEVEL_INFO)
 	if err != nil {
-		log.Panicln(err)
+		log.Println("quics-protocol: ", err)
 	}
 
-	// start quics client
-	err = quicClient.Dial(host + ":" + port)
+	tlsConf := &tls.Config{
+		InsecureSkipVerify: true,
+		NextProtos:         []string{"quics-protocol"},
+	}
+	// start client
+	parsedPort, _ := strconv.Atoi(host)
+	conn, err := quicClient.Dial(&net.UDPAddr{IP: net.IP(host), Port: parsedPort}, tlsConf)
 	if err != nil {
-		log.Panicln(err)
+		log.Println("quics-protocol: ", err)
+	}
+	if err != nil {
+		log.Println("quics-protocol: ", err)
 	}
 
-	quicClient.SendMessage(msgtype, message)
-
+	err = conn.SendMessage(msgtype, message)
+	if err != nil {
+		log.Println(err)
+	}
 	// delay for waiting message sent to server
 	time.Sleep(3 * time.Second)
 	quicClient.Close()

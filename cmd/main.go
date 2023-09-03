@@ -1,10 +1,16 @@
 package main
 
-import "github.com/quic-s/quics-client/pkg/utils"
+import (
+	"log"
+
+	"github.com/spf13/viper"
+)
 
 func main() {
+
 	//os.Exit(Run())
 	// utils.CreateDirIfNotExisted()
 	//http.RestServerStart()
-	utils.GetRootDir()
+
+	log.Println(viper.AllSettings())
 }
