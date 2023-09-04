@@ -96,6 +96,7 @@ func SyncCmd() *cobra.Command {
 				viper.WriteViperEnvVariables("ROOT."+file, DisableRootDir)
 				sync.MakeDisableSync(DisableRootDir)
 			}
+
 		},
 	}
 }

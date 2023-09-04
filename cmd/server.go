@@ -2,7 +2,6 @@ package main
 
 import (
 	"github.com/quic-s/quics-client/pkg/connection"
-	qc "github.com/quic-s/quics-client/pkg/quic"
 	"github.com/quic-s/quics-client/pkg/viper"
 	"github.com/spf13/cobra"
 )
@@ -26,8 +25,7 @@ func ConnectCmd() *cobra.Command {
 			if SPort == "" {
 				SPort = viper.GetViperEnvVariables("QUICS_SERVER_PORT")
 			}
-			clientbody := connection.RegisterClientRequest{Ip: SIp}
-			qc.ClientMessage(qc.CLIENT, clientbody.Encode())
+			connection.RegisterQuicsClient()
 		},
 	}
 }

@@ -11,6 +11,7 @@ import (
 
 	"github.com/quic-go/quic-go"
 	"github.com/quic-go/quic-go/http3"
+	"github.com/quic-s/quics-client/pkg/badger"
 	"github.com/quic-s/quics-client/pkg/utils"
 	"github.com/quic-s/quics-client/pkg/viper"
 )
@@ -41,7 +42,7 @@ func Reboot() {
 
 func RestServerStart() {
 
-	// badger.InitDB()
+	defer badger.CloseDB()
 
 	handler := setupHandler()
 	qconf := quic.Config{}
@@ -74,8 +75,13 @@ func setupHandler() http.Handler {
 
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Printf("%#v\n", r)
-		w.Write([]byte("hello, world"))
+		w.Write([]byte("hello, Quics Client here"))
 	})
+
+	// TODO : add handler for each api
+	// mux.HandleFunc("/api/v1/settings/server", func(w http.ResponseWriter, r *http.Request) {
+
+	// }
 
 	return mux
 }

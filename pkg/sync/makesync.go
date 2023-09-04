@@ -52,13 +52,9 @@ func CanOverWrite(lastUpdate uint64, lastSync uint64, lastestSync uint64) bool {
 }
 
 func UpdateSyncMetadata(syncMetadata SyncMetadata) error {
-	error := badger.Update(badger.Badgerdb, GetSyncMetaKey(&syncMetadata), syncMetadata.Encode())
+	error := badger.Update(syncMetadata.Path, syncMetadata.Encode())
 	if error != nil {
 		return error
 	}
 	return nil
-}
-
-func GetSyncMetaKey(SyncMetadata *SyncMetadata) []byte {
-	return []byte(SyncMetadata.Path)
 }

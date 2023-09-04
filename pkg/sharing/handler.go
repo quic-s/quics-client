@@ -7,13 +7,13 @@ import (
 	"github.com/quic-s/quics-client/pkg/utils"
 )
 
-func GetDownloadLink(filepath string, rootpath string, maxCnt uint32) string {
+func GetDownloadLink(filepath string, maxCnt uint32) string {
 
-	uuid, err := badger.View(badger.Badgerdb, []byte("uuid"))
+	uuid, err := badger.View("uuid")
 	if err != nil {
 		return ""
 	}
-	beforePath, afterPath := utils.SplitPathWithRoot(filepath, rootpath)
+	beforePath, afterPath := utils.SplitBeforeAfterRoot(filepath)
 	fileDownloadRequest := FileDownloadRequest{
 		Uuid:       string(uuid),
 		BeforePath: beforePath,

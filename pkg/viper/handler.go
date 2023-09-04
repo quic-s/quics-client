@@ -36,9 +36,7 @@ func WriteViperEnvVariables(key string, value string) {
 
 func DeleteViperVariablesByKey(key string) {
 
-	viper.Set(key, "")
-	err := viper.WriteConfigAs(QicEnvPath)
-	if err != nil {
-		log.Fatalf("Error while writing config file :  %s", err)
-	}
+	// Future Plan : Update
+	WriteViperEnvVariables(key, "")
+
 }

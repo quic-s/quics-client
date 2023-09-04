@@ -28,11 +28,16 @@ func LocalRelToRoot(rel string, root string) string {
 
 }
 
-// ex) SplitPathWithRoot("/a/b/c", "a/b") -> "/a/b", "/c"
-func SplitPathWithRoot(path string, root string) (string, string) {
+// ex) SplitPathWithRoot("/a/b/c") -> ("/a/b", "/c")
+func SplitBeforeAfterRoot(path string) (string, string) {
 
-	rootdir, _ := filepath.Split(root)
-	afterPath := "/" + path[len(rootdir):]
-	beforePath := path[:len(rootdir)]
-	return beforePath, afterPath
+	dirlist := GetRootDirs()
+
+	for _, v := range dirlist {
+		if path[:len(v)] == v {
+			return path[:len(v)], path[len(v):]
+		}
+
+	}
+	return "", ""
 }

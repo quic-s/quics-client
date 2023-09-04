@@ -25,11 +25,9 @@ func init() {
 		log.Fatal(err)
 	}
 
-	// Register a function to close the DB when the program exits.
-	defer closeDB()
 }
 
-func closeDB() {
+func CloseDB() {
 	if err := Badgerdb.Close(); err != nil {
 		log.Fatal(err)
 	}

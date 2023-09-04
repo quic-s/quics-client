@@ -20,11 +20,15 @@ const (
 
 	DirNNCommand      = "name"
 	DirNNShortCommand = "n"
+
+	DirNNDeleteCommand      = "key"
+	DirNNDeleteShortCommand = "k"
 )
 
 var (
 	DirAbsPath string
 	DirNN      string
+	Key        string
 )
 
 func init() {
@@ -53,6 +57,14 @@ func init() {
 
 	configCmd.AddCommand(ChangeRootDirConfig)
 	configCmd.AddCommand(ReadConfig())
+
+	DeleteConfig := DeleteConfig()
+	DeleteConfig.Flags().StringVarP(&Key, DirNNDeleteCommand, DirNNDeleteShortCommand, "", "delete config by key")
+
+	if err := DeleteConfig.MarkFlagRequired(DirNNDeleteCommand); err != nil {
+		log.Println(err)
+	}
+	configCmd.AddCommand(DeleteConfig)
 
 	rootCmd.AddCommand(configCmd)
 }
@@ -103,6 +115,16 @@ func ReadConfig() *cobra.Command {
 		Short: "show configs of quics client",
 		Run: func(cmd *cobra.Command, args []string) {
 			utils.ReadEnvFile()
+		},
+	}
+}
+
+func DeleteConfig() *cobra.Command {
+	return &cobra.Command{
+		Use:   "delete",
+		Short: "delete config of quics client",
+		Run: func(cmd *cobra.Command, args []string) {
+			viper.DeleteViperVariablesByKey(Key)
 		},
 	}
 }
