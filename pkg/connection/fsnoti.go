@@ -136,12 +136,24 @@ func DirWatchStart() {
 }
 
 func DirWatchAdd(rootpath string) {
-	filepath.Walk(rootpath, func(path string, info os.FileInfo, err error) error {
-		if info.IsDir() {
-			Watcher.Add(path)
+	err := filepath.Walk(rootpath, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
 		}
+		if info.IsDir() {
+			err := Watcher.Add(path)
+			if err != nil {
+				log.Println("quics-client : Watcher Adding unsuccessful ", err)
+			}
+
+		}
+
 		return nil
 	})
+	if err != nil {
+		log.Println("quics-client : ", err)
+	}
+
 }
 
 func DirWatchStop(rootpath string) {

@@ -50,14 +50,11 @@ func (r *RestClient) GetRequest(path string) *bytes.Buffer {
 		log.Fatal(err)
 	}
 
-	log.Println("quics-client :rsp : ", rsp)
-
 	body := &bytes.Buffer{}
 	_, err = io.Copy(body, rsp.Body)
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Println("quics-client :Response body : ", body.String())
 	return body
 
 }
@@ -65,22 +62,20 @@ func (r *RestClient) GetRequest(path string) *bytes.Buffer {
 func (r *RestClient) PostRequest(path string, contentType string, content []byte) *bytes.Buffer {
 
 	url := "https://localhost:" + qviper.GetViperEnvVariables("REST_SERVER_PORT") + path
-
+	log.Println("log : " + string(content))
 	contentReader := bytes.NewReader(content)
 	rsp, err := r.hclient.Post(url, contentType, contentReader)
 	if err != nil {
-		log.Fatal(err)
+		log.Println("quics-client : ", err)
 	}
 
-	log.Println("quics-client :rsp : ", rsp)
-
-	body := &bytes.Buffer{}
-	_, err = io.Copy(body, rsp.Body)
-	if err != nil {
-		log.Fatal(err)
+	buf := make([]byte, rsp.ContentLength)
+	_, err = rsp.Body.Read(buf)
+	if err != nil && err != io.EOF {
+		log.Println("quics-client : ", err)
 	}
-	log.Println("quics-client :Response body : ", body.String())
-	return body
+	log.Println("quics-client : Response body : ", string(buf))
+	return nil
 }
 
 func (r *RestClient) Close() error {

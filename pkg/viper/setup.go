@@ -20,8 +20,14 @@ func init() {
 
 	_, err = os.Stat(QicEnvPath)
 	if os.IsNotExist(err) {
+
 		viper.SetConfigFile(".env")
 		viper.SetConfigType("env")
+
+		err = viper.ReadInConfig()
+		if err != nil {
+			log.Println("quics-client : Error while initial reading config file : ", err)
+		}
 		err = viper.WriteConfigAs(QicEnvPath)
 		if err != nil {
 			log.Fatalf("quics-client : Error while writing config file   %s", err)
@@ -33,7 +39,7 @@ func init() {
 
 	err = viper.ReadInConfig()
 	if err != nil {
-		log.Println("quics-client:Error while reading config file : ", err)
+		log.Println("quics-client : Error while reading config file : ", err)
 
 	}
 }

@@ -25,9 +25,31 @@ func SetupHandler() http.Handler {
 			body := &types.RegisterClientHTTP3{}
 			err := types.UnmarshalJSONFromRequest(r, body)
 			if err != nil {
+				log.Println("quics-client : cannot unmarshal")
 				log.Println(err)
 			}
 			connection.RegisterClient(body.ClientPW, body.Host, body.Port)
+
+			w.Write([]byte("quics-client : [/api/v1/connect/server] Resp : OK"))
+		}
+	})
+
+	mux.HandleFunc("/api/v1/connect/root/local", func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case "POST":
+			body := &types.RegisterRootDirHTTP3{}
+			err := types.UnmarshalJSONFromRequest(r, body)
+			if err != nil {
+				log.Println("quics-client : cannot unmarshal")
+				log.Println(err)
+			}
+
+			err = connection.RegisterLocalRootDirRequest(body.RootDir, body.RootDirPw)
+			if err != nil {
+				log.Println("quics-client : ", err)
+			}
+			w.Write([]byte("quics-client : [/api/v1/connect/root/local] Resp : OK"))
+
 		}
 	})
 
@@ -37,6 +59,7 @@ func SetupHandler() http.Handler {
 			body := &types.RegisterRootDirHTTP3{}
 			err := types.UnmarshalJSONFromRequest(r, body)
 			if err != nil {
+				log.Println("quics-client : cannot unmarshal")
 				log.Println(err)
 			}
 
@@ -50,6 +73,7 @@ func SetupHandler() http.Handler {
 			body := &types.DisconnectRootDirHTTP3{}
 			err := types.UnmarshalJSONFromRequest(r, body)
 			if err != nil {
+				log.Println("quics-client : cannot unmarshal")
 				log.Println(err)
 			}
 
@@ -69,6 +93,7 @@ func SetupHandler() http.Handler {
 		body := &types.DisconnectClientHTTP3{}
 		err := types.UnmarshalJSONFromRequest(r, body)
 		if err != nil {
+			log.Println("quics-client : cannot unmarshal")
 			log.Println(err)
 		}
 		connection.DisconnectClientRequest(body.ClientPw)
@@ -88,6 +113,7 @@ func SetupHandler() http.Handler {
 			showStatus := &types.ShowStatusHTTP3{}
 			err := types.UnmarshalJSONFromRequest(r, showStatus)
 			if err != nil {
+				log.Println("quics-client : cannot unmarshal")
 				log.Println(err)
 			}
 

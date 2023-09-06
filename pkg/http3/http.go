@@ -14,6 +14,7 @@ import (
 )
 
 func RestServerStart() {
+
 	log.Println("quics-client : starting port " + viper.GetViperEnvVariables("REST_SERVER_PORT"))
 	badger.OpenDB()
 	connection.InitWatcher()
@@ -26,6 +27,7 @@ func RestServerStart() {
 		}
 
 	}
+	connection.DirWatchStart()
 	defer connection.WatchStop()
 	defer badger.CloseDB()
 

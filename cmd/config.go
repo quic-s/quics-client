@@ -103,7 +103,7 @@ func ChangeRootDirConfig() *cobra.Command {
 				log.Fatal("duplicate value, cannot overwrite")
 			}
 
-			viper.WriteViperEnvVariables("ROOT."+DirNN, DirAbsPath)
+			viper.WriteViperEnvVariables("ROOT_"+DirNN, DirAbsPath)
 		},
 	}
 

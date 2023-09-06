@@ -54,35 +54,18 @@ func ClientFirstMessage(msgType string, message []byte) {
 	// start client
 	parsedPort, err := strconv.Atoi(viper.GetViperEnvVariables("QUICS_SERVER_PORT"))
 	if err != nil {
-		log.Println("quics-client :quics-client: ", err)
+		log.Println("quics-client : ", err)
 	}
 	Conn, err = QPClient.DialWithMessage(&net.UDPAddr{IP: net.ParseIP(viper.GetViperEnvVariables("QUICS_SERVER_IP")), Port: parsedPort}, tlsConf, msgType, message)
 	if err != nil {
-		log.Println("quics-client :quics-protocol: ", err)
+		log.Println("quics-client : ", err)
 	}
 	if err != nil {
-		log.Println("quics-client :quics-protocol: ", err)
+		log.Println("quics-client : ", err)
 	}
 }
 
 // TODO password to crypto
-func RegisterLocalRootDir(filepath string, password string) error {
-	before, after := utils.SplitBeforeAfterRoot(filepath)
-	body := types.RegisterRootDirRequest{
-		Uuid:            viper.GetViperEnvVariables("UUID"),
-		RootDirPassword: password,
-		BeforePath:      before,
-		AfterPath:       after,
-	}
-	response, err := Conn.SendMessageWithResponse(LOCALROOT, body.Encode())
-	if err != nil {
-		return err
-	}
-	if string(response) == "OK" {
-		return nil
-	}
-	return fmt.Errorf("RegisterRootDir: %s", string(response))
-}
 
 func Ping() bool {
 	timeout := time.Duration(1 * time.Second)
@@ -97,26 +80,25 @@ func Ping() bool {
 // @URL /api/v1/connect/root/local
 // ex. RegisterLocalRootDirRequest("/home/ubuntu/rootDir", "password")
 func RegisterLocalRootDirRequest(LocalRootDir string, RootDirPW string) error {
-
-	_, file := filepath.Split(LocalRootDir)
-	before, after := utils.SplitBeforeAfterRoot(LocalRootDir)
+	dir, rootdir := filepath.Split(LocalRootDir)
 
 	body := types.RegisterRootDirRequest{
 		Uuid:            viper.GetViperEnvVariables("UUID"),
 		RootDirPassword: RootDirPW,
-		BeforePath:      before,
-		AfterPath:       after,
+		BeforePath:      dir,
+		AfterPath:       "/" + rootdir,
 	}
 	response, err := Conn.SendMessageWithResponse(LOCALROOT, body.Encode())
 	if err != nil {
 		return err
 	}
 	if string(response) == "OK" {
-		viper.WriteViperEnvVariables("ROOT."+file, LocalRootDir)
+		viper.WriteViperEnvVariables("ROOT_"+rootdir, LocalRootDir)
+
 		DirWatchAdd(LocalRootDir)
 		return nil
 	}
-	return fmt.Errorf("RegisterRootDir: %s", string(response))
+	return fmt.Errorf("quics-client : RegisterRootDir %s", string(response))
 }
 
 // @URL /api/v1/connect/root/remote
@@ -140,7 +122,7 @@ func RegisterRemoteRootDirRequest(LocalRootAbsPath string, RootDirPW string) err
 		return err
 	}
 	if string(response) == "OK" {
-		viper.WriteViperEnvVariables("ROOT."+rootdir, LocalRootAbsPath)
+		viper.WriteViperEnvVariables("ROOT_"+rootdir, LocalRootAbsPath)
 		_, err := os.Stat(LocalRootAbsPath)
 		if os.IsNotExist(err) {
 			log.Println("quics-client :quics-client: create new root directory coming from remote")
@@ -172,7 +154,7 @@ func UnRegisterRootDirRequest(DisconnectRootDir string, RootDirPW string) error 
 		return err
 	}
 	if string(response) == "OK" {
-		viper.DeleteViperVariablesByKey("ROOT." + file)
+		viper.DeleteViperVariablesByKey("ROOT_" + file)
 		return nil
 		//TODO make clear from fsnotify
 
@@ -187,7 +169,7 @@ func ShowListRemoteRootDirRequest() {
 	if err != nil {
 		log.Println(err)
 	}
-	log.Println("quics-client :response : " + string(resp))
+	log.Println("quics-client : response : " + string(resp))
 }
 
 // @URL /api/v1/connect/server
@@ -199,10 +181,13 @@ func RegisterClient(ClientPW string, SIp string, SPort string) {
 	if SPort != "" {
 		viper.WriteViperEnvVariables("QUICS_SERVER_PORT", SPort)
 	}
-
-	UUID := uuid.New().String()
-	viper.WriteViperEnvVariables("UUID", UUID)
-
+	var UUID string
+	if viper.GetViperEnvVariables("UUID") != "" {
+		UUID = viper.GetViperEnvVariables("UUID")
+	} else {
+		UUID = uuid.New().String()
+		viper.WriteViperEnvVariables("UUID", UUID)
+	}
 	body := types.RegisterClientRequest{
 		Uuid:           UUID,
 		ClientPassword: ClientPW,

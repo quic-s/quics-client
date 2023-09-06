@@ -55,11 +55,12 @@ func init() {
 	ConnectRootCmd.Flags().StringVarP(&LocalRootDir, ConnectLocalCommand, ConnectLocalShortCommand, "", "decide local root directory")
 	ConnectRootCmd.Flags().StringVarP(&RemoteRootDir, ConnectRemoteCommand, ConnectRemoteShortCommand, "", "decide remote root directory")
 	ConnectRootCmd.Flags().StringVarP(&RootDirPW, PasswordCommand, PasswordShortCommand, "", "password for entering root dir")
-	if err := ConnectRootCmd.MarkFlagRequired(ConnectLocalCommand); err != nil {
+	if err := ConnectRootCmd.MarkFlagRequired(PasswordCommand); err != nil {
 		log.Println(err)
 	}
 
 	ConnectCmd.AddCommand(ConnectRootCmd)
+	ConnectCmd.AddCommand(ShowRemoteRootListCmd())
 	rootCmd.AddCommand(ConnectCmd)
 
 	//disconnect
@@ -97,6 +98,9 @@ func ConnectServerCmd() *cobra.Command {
 		Use:   "server",
 		Short: "connect to server",
 		Run: func(cmd *cobra.Command, args []string) {
+			log.Println("host:", SIp)
+			log.Println("port:", SPort)
+			log.Println("password:", ClientPW)
 			registerClient := &types.RegisterClientHTTP3{
 				Host:     SIp,
 				Port:     SPort,
@@ -107,7 +111,6 @@ func ConnectServerCmd() *cobra.Command {
 			if err != nil {
 				log.Println(err)
 			}
-
 			restClient := NewRestClient()
 			restClient.PostRequest("/api/v1/connect/server", "application/json", body)
 		},
@@ -130,6 +133,7 @@ func ConnectRootCmd() *cobra.Command {
 					RootDir:   LocalRootDir,
 					RootDirPw: RootDirPW,
 				}
+
 				body, err := json.Marshal(registerRootDirHTTP3)
 				if err != nil {
 					log.Println(err)

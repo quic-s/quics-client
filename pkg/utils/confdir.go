@@ -72,16 +72,16 @@ func ReadEnvFile() map[string]string {
 		kvMap[key] = value
 	}
 
-	log.Println(kvMap)
+	//log.Println(kvMap)
 	return kvMap
 }
 
 func GetRootDirs() map[string]string {
-	// ex) GetRootDirs() -> [{"ROOT.b": "/home/user/a/b"}, {"ROOT.d": "/home/user/c/d"}]
+	// ex) GetRootDirs() -> [{"ROOT_b": "/home/user/a/b"}, {"ROOT_d": "/home/user/c/d"}]
 	rawList := ReadEnvFile()
 	kvList := map[string]string{}
 	for k, v := range rawList {
-		if len(k) > 5 && k[:5] == "ROOT." {
+		if len(k) > 5 && k[:5] == "ROOT_" {
 			kvList[k] = v
 
 		}
@@ -91,7 +91,7 @@ func GetRootDirs() map[string]string {
 
 func GetRootDir(key string) string {
 	// ex) GetRootDir("b") -> "/home/user/a/b"
-	key = "ROOT." + key
+	key = "ROOT_" + key
 	rootDirList := GetRootDirs()
 	for k, v := range rootDirList {
 		if k == key {
@@ -117,7 +117,7 @@ func IsDuplicateKey(key string) bool {
 	// ex) IsDuplicateKey("b") -> true
 	rootDirList := GetRootDirs()
 	for k, v := range rootDirList {
-		if k == "ROOT."+key && v != "" {
+		if k == "ROOT_"+key && v != "" {
 			return true
 		}
 	}

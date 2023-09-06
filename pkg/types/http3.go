@@ -3,6 +3,7 @@ package types
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 )
 
@@ -31,24 +32,6 @@ type ShowStatusHTTP3 struct {
 	Filepath string `json:"filepath"`
 }
 
-// func UnmarshalRegisterClientHTTP3(data []byte) (*RegisterClientHTTP3, error) {
-// 	cs := &RegisterClientHTTP3{}
-// 	err := json.Unmarshal(data, cs)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	return cs, nil
-// }
-
-// func UnmarshalRegisterLocalRootDirHTTP3(data []byte) (*RegisterRootDirHTTP3, error) {
-// 	cs := &RegisterRootDirHTTP3{}
-// 	err := json.Unmarshal(data, cs)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	return cs, nil
-// }
-
 func UnmarshalJSON(data []byte, dstStruct any) error {
 	err := json.Unmarshal(data, dstStruct)
 	if err != nil {
@@ -60,7 +43,7 @@ func UnmarshalJSON(data []byte, dstStruct any) error {
 func UnmarshalJSONFromRequest(r *http.Request, dstStruct any) error {
 	buf := make([]byte, r.ContentLength)
 	n, err := r.Body.Read(buf)
-	if err != nil {
+	if err != nil && err != io.EOF {
 		return err
 	}
 	if n == 0 {
@@ -70,5 +53,6 @@ func UnmarshalJSONFromRequest(r *http.Request, dstStruct any) error {
 	if err != nil {
 		return err
 	}
+
 	return nil
 }
