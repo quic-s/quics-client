@@ -1,9 +1,9 @@
 package sync
 
-import (
-	qc "github.com/quic-s/quics-client/pkg/quic"
-)
+import "github.com/quic-s/quics-client/pkg/connection"
 
+// @URL /api/v1/rescan
+// ex) Rescan()
 func Rescan() {
-	qc.ClientMessage(qc.RESCAN, []byte("reset the time"))
+	connection.Conn.SendMessage(connection.RESCAN, []byte(""))
 }

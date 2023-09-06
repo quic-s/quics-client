@@ -1,46 +1,250 @@
 package connection
 
 import (
+	"crypto/tls"
 	"io"
 	"log"
+	"net"
 	"os"
-	"sync"
+	"path/filepath"
+	"strconv"
+	"time"
 
+	"github.com/fsnotify/fsnotify"
+	"github.com/quic-s/quics-client/pkg/badger"
+	"github.com/quic-s/quics-client/pkg/types"
+	"github.com/quic-s/quics-client/pkg/utils"
+	"github.com/quic-s/quics-client/pkg/viper"
 	qp "github.com/quic-s/quics-protocol"
+	"github.com/quic-s/quics-protocol/pkg/utils/fileinfo"
 )
 
 var (
-	wg                   = sync.WaitGroup{}
-	QuicResponseListener *qp.QP
+	QPClient *qp.QP         // quics-protocol object 여기에는 연결을 위한 메서드들이 정의되어 있음
+	Conn     *qp.Connection // connection object 여기에는 연결 그 자체가 정의되어 있음
+	Watcher  *fsnotify.Watcher
 )
 
-func init() {
-	var err error
-	QuicResponseListener, err = initializeServer()
+func InitWatcher() {
+	// Create a new watcher.
+	err := error(nil)
+	Watcher, err = fsnotify.NewWatcher()
 	if err != nil {
 		log.Fatal(err)
 	}
-
 }
 
-func initializeServer() (*qp.QP, error) {
-	// initialize server
-	quicProto, err := qp.New(qp.LOG_LEVEL_INFO)
+func init() {
+
+	err := error(nil)
+	QPClient, err = qp.New(qp.LOG_LEVEL_INFO)
 	if err != nil {
-		return nil, err
-	}
-	err = quicProto.RecvMessageHandleFunc("test", func(conn *qp.Connection, msgType string, data []byte) {
-		defer wg.Done()
-		log.Println("quics-protocol: ", "message received ", conn.Conn.RemoteAddr().String())
-		log.Println("quics-protocol: ", msgType, string(data))
-	})
-	if err != nil {
-		return nil, err
+		panic(err)
 	}
 
-	err = quicProto.RecvFileHandleFunc("test", func(conn *qp.Connection, fileType string, fileInfo *qp.FileInfo, fileReader io.Reader) {
-		defer wg.Done()
-		log.Println("quics-protocol: ", "file received ", fileInfo.Name)
+	// initialize server
+	err = QPClient.RecvMessageHandleFunc("test", func(conn *qp.Connection, msgType string, data []byte) {
+		log.Println("quics-client :quics-protocol: ", "message received ", conn.Conn.RemoteAddr().String())
+		log.Println("quics-client :quics-protocol: ", msgType, string(data))
+	})
+	if err != nil {
+		log.Panic(err)
+	}
+
+	// initialize server
+	err = QPClient.RecvMessageHandleFunc(MUSTSYNC, func(conn *qp.Connection, msgType string, data []byte) {
+		mustSync := &types.MustSync{}
+		mustSync.Decode(data)
+		// Get LocalAbsPath
+		localAbsPath := utils.GetRootDir(mustSync.AfterPath[1:])
+		if localAbsPath == "" {
+			localAbsPaths := utils.GetRootDirs()
+			for _, l := range localAbsPaths {
+				_, rootDirName := filepath.Split(l)
+				if rootDirName == mustSync.AfterPath[1:] {
+					localAbsPath = l
+					break
+				}
+			}
+		}
+		// Get SyncMeta by LocalAbsPath
+		syncMetaByte, err := badger.View(localAbsPath)
+		if err != nil {
+			log.Panic(err)
+		}
+		syncMeta := &types.SyncMetadata{}
+		syncMeta.Decode(syncMetaByte)
+
+		// Check Condition for OverWrite
+		if syncMeta.LastSyncTimestamp == syncMeta.LastUpdateTimestamp && syncMeta.LastSyncHash == syncMeta.LastUpdateHash && mustSync.LatestSyncTimestamp > syncMeta.LastUpdateTimestamp {
+			before, after := utils.SplitBeforeAfterRoot(localAbsPath)
+			// PLEASEFILE
+			pleaseFile := &types.PleaseFile{
+				Uuid:          viper.GetViperEnvVariables("UUID"),
+				BeforePath:    before,
+				AfterPath:     after,
+				SyncTimestamp: mustSync.LatestSyncTimestamp,
+			}
+
+			Conn.SendMessage(PLEASEFILE, pleaseFile.Encode())
+			// when GIVEYOUFILE is come, badger.Update(localAbsPath, syncMeta.Encode()) is envoked
+		} else {
+			// TODO 6 else, PLEASESYNC
+			before, after := utils.SplitBeforeAfterRoot(localAbsPath)
+			prevSyncMetadata := types.SyncMetadata{}
+			prevSyncMetaByte, err := badger.View(localAbsPath)
+			if err != nil {
+				log.Panic(err)
+			}
+			prevSyncMetadata.Decode(prevSyncMetaByte)
+
+			pleaseSync := types.PleaseSync{
+				Uuid:                viper.GetViperEnvVariables("UUID"),
+				Event:               CONFIRM,
+				BeforePath:          before,
+				AfterPath:           after,
+				LastUpdateTimestamp: prevSyncMetadata.LastUpdateTimestamp,
+				LastUpdateHash:      prevSyncMetadata.LastUpdateHash,
+			}
+			Conn.SendFileMessage(PLEASESYNC, pleaseSync.Encode(), localAbsPath)
+
+		}
+
+	})
+	if err != nil {
+		log.Panic(err)
+	}
+
+	err = QPClient.RecvMessageWithResponseHandleFunc(TWOOPTIONS, func(conn *qp.Connection, msgType string, data []byte) []byte {
+		twoOptions := &types.TwoOptions{}
+		twoOptions.Decode(data)
+		newTimestamp := uint64(0)
+		if twoOptions.ClientSideTimestamp > twoOptions.ServerSideSyncTimestamp {
+			newTimestamp = twoOptions.ClientSideTimestamp
+		} else {
+			newTimestamp = twoOptions.ServerSideSyncTimestamp
+		}
+		// TODO Give Options to Users, but now just choose client's
+		chooseOne := &types.ChooseOne{
+			BeforePath:          twoOptions.BeforePath,
+			AfterPath:           twoOptions.AfterPath,
+			ChosenHash:          twoOptions.ClientSideHash,
+			ChosenTimestamp:     twoOptions.ClientSideTimestamp,
+			LastUpdateHash:      twoOptions.ClientSideHash,
+			LastUpdateTimestamp: newTimestamp,
+		}
+
+		// Get LocalAbsPath
+		localAbsPath := utils.GetRootDir(twoOptions.AfterPath[1:])
+		if localAbsPath == "" {
+			localAbsPaths := utils.GetRootDirs()
+			for _, l := range localAbsPaths {
+				_, rootDirName := filepath.Split(l)
+				if rootDirName == twoOptions.AfterPath[1:] {
+					localAbsPath = l
+					break
+				}
+			}
+		}
+		// Get SyncMeta by LocalAbsPath
+		prevSyncMetaByte, err := badger.View(localAbsPath)
+		if err != nil {
+			log.Panic(err)
+		}
+		prevSyncMeta := &types.SyncMetadata{}
+		prevSyncMeta.Decode(prevSyncMetaByte)
+
+		syncMetadata := &types.SyncMetadata{
+			Path:                localAbsPath,
+			LastUpdateTimestamp: chooseOne.LastUpdateTimestamp,
+			LastSyncTimestamp:   chooseOne.LastUpdateTimestamp,
+			LastSyncHash:        chooseOne.LastUpdateHash,
+			LastUpdateHash:      chooseOne.LastUpdateHash,
+		}
+		badger.Update(localAbsPath, syncMetadata.Encode())
+
+		return chooseOne.Encode()
+
+	})
+	if err != nil {
+		log.Panic(err)
+	}
+
+	err = QPClient.RecvFileMessageHandleFunc(GIVEYOUFILE, func(conn *qp.Connection, fileMsgType string, msgData []byte, fileInfo *fileinfo.FileInfo, fileReader io.Reader) {
+		mustSync := &types.MustSync{}
+		mustSync.Decode(msgData)
+		localAbsPath := utils.GetRootDir(mustSync.AfterPath[1:])
+		if localAbsPath == "" {
+			localAbsPaths := utils.GetRootDirs()
+			for _, l := range localAbsPaths {
+				_, rootDirName := filepath.Split(l)
+				if rootDirName == mustSync.AfterPath[1:] {
+					localAbsPath = l
+					break
+				}
+			}
+		}
+
+		// Get SyncMeta by LocalAbsPath
+		syncMetaByte, err := badger.View(localAbsPath)
+		if err != nil {
+			log.Panic(err)
+		}
+		syncMeta := &types.SyncMetadata{}
+		if len(syncMetaByte) != 0 {
+			syncMeta.Decode(syncMetaByte)
+		}
+		// Check Condition for OverWrite
+		if len(syncMetaByte) == 0 || syncMeta.LastSyncTimestamp == syncMeta.LastUpdateTimestamp && syncMeta.LastSyncHash == syncMeta.LastUpdateHash && mustSync.LatestSyncTimestamp > syncMeta.LastUpdateTimestamp {
+			file := &os.File{}
+			if _, err := os.Stat(localAbsPath); os.IsNotExist(err) {
+				file, err = os.Create(localAbsPath)
+			} else {
+				file, err = os.Open(localAbsPath)
+			}
+
+			io.Copy(file, fileReader)
+			file.Chmod(fileInfo.Mode)
+			os.Chtimes(localAbsPath, time.Now(), fileInfo.ModTime)
+			syncMeta = &types.SyncMetadata{
+				Path:                localAbsPath,
+				LastUpdateTimestamp: mustSync.LatestSyncTimestamp,
+				LastSyncTimestamp:   mustSync.LatestSyncTimestamp,
+				LastSyncHash:        mustSync.LatestHash,
+				LastUpdateHash:      mustSync.LatestHash,
+			}
+			badger.Update(localAbsPath, syncMeta.Encode())
+		} else {
+			before, after := utils.SplitBeforeAfterRoot(localAbsPath)
+			syncMetaByte, err := badger.View(localAbsPath)
+			if err != nil {
+				log.Panic(err)
+			}
+			syncMeta := &types.SyncMetadata{}
+			syncMeta.Decode(syncMetaByte)
+			pleaseSync := types.PleaseSync{
+				Uuid:                viper.GetViperEnvVariables("UUID"),
+				BeforePath:          before,
+				AfterPath:           after,
+				LastUpdateTimestamp: syncMeta.LastUpdateTimestamp,
+				LastUpdateHash:      syncMeta.LastUpdateHash,
+				Event:               WRITE,
+			}
+			if _, err := os.Stat(localAbsPath); os.IsNotExist(err) {
+				pleaseSync.Event = DELETE
+				Conn.SendMessage(PLEASESYNC, pleaseSync.Encode())
+				return
+			}
+			Conn.SendFileMessage(PLEASESYNC, pleaseSync.Encode(), localAbsPath)
+		}
+
+	})
+	if err != nil {
+		log.Panic(err)
+	}
+
+	err = QPClient.RecvFileHandleFunc("test", func(conn *qp.Connection, fileType string, fileInfo *qp.FileInfo, fileReader io.Reader) {
+		log.Println("quics-client :quics-protocol: ", "file received ", fileInfo.Name)
 		file, err := os.Create("received.txt")
 		if err != nil {
 			log.Fatal(err)
@@ -52,18 +256,17 @@ func initializeServer() (*qp.QP, error) {
 		if n != fileInfo.Size {
 			log.Fatalf("quics-protocol: read only %dbytes", n)
 		}
-		log.Println("quics-protocol: ", "file saved with ", n, "bytes")
+		log.Println("quics-client :quics-protocol: ", "file saved with ", n, "bytes")
 	})
 	if err != nil {
-		return nil, err
+		log.Panic(err)
 	}
 
-	err = quicProto.RecvFileMessageHandleFunc("test", func(conn *qp.Connection, fileMsgType string, data []byte, fileInfo *qp.FileInfo, fileReader io.Reader) {
-		defer wg.Done()
-		log.Println("quics-protocol: ", "message received ", conn.Conn.RemoteAddr().String())
-		log.Println("quics-protocol: ", fileMsgType, string(data))
+	err = QPClient.RecvFileMessageHandleFunc("test", func(conn *qp.Connection, fileMsgType string, data []byte, fileInfo *qp.FileInfo, fileReader io.Reader) {
+		log.Println("quics-client :quics-protocol: ", "message received ", conn.Conn.RemoteAddr().String())
+		log.Println("quics-client :quics-protocol: ", fileMsgType, string(data))
 
-		log.Println("quics-protocol: ", "file received ", fileInfo.Name)
+		log.Println("quics-client :quics-protocol: ", "file received ", fileInfo.Name)
 		file, err := os.Create("received2.txt")
 		if err != nil {
 			log.Fatal(err)
@@ -73,14 +276,33 @@ func initializeServer() (*qp.QP, error) {
 			log.Fatal(err)
 		}
 		if n != fileInfo.Size {
-			log.Println("quics-protocol: ", "read only ", n, "bytes")
+			log.Println("quics-client :quics-protocol: ", "read only ", n, "bytes")
 			log.Fatal(err)
 		}
-		log.Println("quics-protocol: ", "file saved")
+		log.Println("quics-client :quics-protocol: ", "file saved")
 	})
 	if err != nil {
-		return nil, err
+		log.Panic(err)
+	}
+}
+
+func CloseConnect() {
+	Conn.Close()
+	Conn = nil
+}
+
+func ReConnect() {
+	p, err := strconv.Atoi(viper.GetViperEnvVariables("QUICS_SERVER_PORT"))
+	if err != nil {
+		panic(err)
 	}
 
-	return quicProto, nil
+	tlsConf := &tls.Config{
+		InsecureSkipVerify: true,
+		NextProtos:         []string{"quic-s"},
+	}
+	Conn, err = QPClient.Dial(&net.UDPAddr{IP: net.ParseIP(viper.GetViperEnvVariables("QUICS_SERVER_IP")), Port: p}, tlsConf)
+	if err != nil {
+		panic(err)
+	}
 }

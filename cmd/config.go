@@ -13,7 +13,7 @@ const (
 	HostShortCommand = "H"
 
 	PortCommand      = "port"
-	PortShortCommand = "p"
+	PortShortCommand = "P"
 
 	DirAbsPathCommand      = "abspath"
 	DirAbsPathShortCommand = "d"

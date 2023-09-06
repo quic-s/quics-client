@@ -1,4 +1,4 @@
-package history
+package types
 
 import (
 	"bytes"
@@ -6,6 +6,9 @@ import (
 )
 
 type PleaseFile struct {
+	Uuid          string
+	BeforePath    string
+	AfterPath     string
 	SyncTimestamp uint64
 }
 

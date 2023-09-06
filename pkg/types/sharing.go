@@ -1,4 +1,4 @@
-package sharing
+package types
 
 import (
 	"bytes"

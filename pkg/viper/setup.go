@@ -3,23 +3,20 @@ package viper
 import (
 	"log"
 	"os"
-	"path"
 	"path/filepath"
 
 	"github.com/spf13/viper"
 )
 
-var (
-	tem        = ""
-	QicEnvPath = path.Join(tem + ".qic.env")
-)
+var QicEnvPath string
 
 func init() {
 	tempDir, err := os.UserHomeDir()
 	if err != nil {
 		log.Fatal(err)
 	}
-	tem = filepath.Join(tempDir, ".quics")
+	tem := filepath.Join(tempDir, ".quics")
+	QicEnvPath = filepath.Join(tem, "qic.env")
 
 	_, err = os.Stat(QicEnvPath)
 	if os.IsNotExist(err) {
@@ -27,7 +24,7 @@ func init() {
 		viper.SetConfigType("env")
 		err = viper.WriteConfigAs(QicEnvPath)
 		if err != nil {
-			log.Fatalf("Error while writing config file :  %s", err)
+			log.Fatalf("quics-client : Error while writing config file   %s", err)
 		}
 	} else {
 		viper.SetConfigFile(QicEnvPath)
@@ -36,7 +33,7 @@ func init() {
 
 	err = viper.ReadInConfig()
 	if err != nil {
-		log.Println("Error while reading config file : ", err)
+		log.Println("quics-client:Error while reading config file : ", err)
 
 	}
 }

@@ -1,13 +1,13 @@
 package main
 
-import "os"
+import (
+	"github.com/quic-s/quics-client/pkg/utils"
+)
 
 func main() {
+	utils.CreateDirIfNotExisted()
 
-	os.Exit(Run())
-	// utils.CreateDirIfNotExisted()
+	//os.Exit(Run())
 	//http.RestServerStart()
-
-	//log.Println(viper.AllSettings())
 
 }

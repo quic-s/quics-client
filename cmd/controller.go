@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/quic-s/quics-client/pkg/app"
+	"github.com/quic-s/quics-client/pkg/http3"
 
 	"github.com/quic-s/quics-client/pkg/viper"
 	"github.com/spf13/cobra"
@@ -22,8 +23,6 @@ const (
 )
 
 var (
-	SIp    string
-	SPort  string
 	MyPort string
 )
 
@@ -46,7 +45,7 @@ func StartCmd() *cobra.Command {
 			if MyPort != "" {
 				viper.WriteViperEnvVariables("REST_SERVER_PORT", MyPort)
 			}
-			app.RestServerStart()
+			http3.RestServerStart()
 
 		},
 	}

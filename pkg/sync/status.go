@@ -1,16 +1,18 @@
 package sync
 
-// 폴더 경로 | 마지막 동기화 시점
-type SyncStatus struct {
-	RootAbsPath string
-	LastSyncd   string
-	NickName    string //nullable
-}
+import (
+	"github.com/quic-s/quics-client/pkg/badger"
+	"github.com/quic-s/quics-client/pkg/types"
+)
 
-func ShowAllStatus() SyncStatus {
-	return SyncStatus{}
-}
-
-func ShowStatus(DirForStatus string) SyncStatus {
-	return SyncStatus{}
+// @URL /api/v1/status/root/
+// ex) ShowStatus("/home/rootDir/text.txt)"
+func ShowStatus(filepath string) types.SyncMetadata {
+	value, err := badger.View(filepath)
+	if err != nil {
+		return types.SyncMetadata{}
+	}
+	syncMetadata := types.SyncMetadata{}
+	syncMetadata.Decode(value)
+	return syncMetadata
 }

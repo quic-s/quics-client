@@ -4,6 +4,7 @@ import (
 	"log"
 
 	"github.com/quic-s/quics-client/pkg/badger"
+	"github.com/quic-s/quics-client/pkg/types"
 	"github.com/quic-s/quics-client/pkg/utils"
 )
 
@@ -13,8 +14,9 @@ func GetDownloadLink(filepath string, maxCnt uint32) string {
 	if err != nil {
 		return ""
 	}
+
 	beforePath, afterPath := utils.SplitBeforeAfterRoot(filepath)
-	fileDownloadRequest := FileDownloadRequest{
+	fileDownloadRequest := types.FileDownloadRequest{
 		Uuid:       string(uuid),
 		BeforePath: beforePath,
 		AfterPath:  afterPath,
@@ -22,7 +24,7 @@ func GetDownloadLink(filepath string, maxCnt uint32) string {
 	}
 	log.Println(fileDownloadRequest)
 	//TODO can get return message
-	//qc.ClientMessage(qc.SHARING, fileDownloadRequest.Encode())
+	//connection.ClientMessage(connection.SHARING, fileDownloadRequest.Encode())
 
 	return ""
 

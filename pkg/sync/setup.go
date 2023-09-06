@@ -1,5 +1,0 @@
-package sync
-
-func init() {
-
-}

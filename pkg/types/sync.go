@@ -1,4 +1,4 @@
-package sync
+package types
 
 import (
 	"bytes"
@@ -6,7 +6,7 @@ import (
 )
 
 type SyncMetadata struct { // Per file
-	Path                string // key
+	Path                string // key, Local Absolute Path
 	LastUpdateTimestamp uint64 // Local File changed time
 	LastUpdateHash      string
 	LastSyncTimestamp   uint64 // Sync Success Time
@@ -14,7 +14,8 @@ type SyncMetadata struct { // Per file
 }
 
 type PleaseSync struct {
-	Uuid string
+	Uuid  string
+	Event string
 	// e.g., /home/ubuntu/rootDir/file
 	BeforePath          string // /home/ubuntu
 	AfterPath           string // /rootDir/file

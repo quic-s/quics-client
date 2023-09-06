@@ -12,7 +12,7 @@ func GetViperEnvVariables(key string) string {
 
 	err := viper.ReadInConfig()
 	if err != nil {
-		log.Println("Error while reading config file : ", err)
+		log.Println("quics-client :Error while reading config file : ", err)
 		return ""
 
 	}
@@ -22,7 +22,6 @@ func GetViperEnvVariables(key string) string {
 	}
 
 	return value
-
 }
 
 func WriteViperEnvVariables(key string, value string) {

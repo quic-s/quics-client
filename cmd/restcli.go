@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"crypto/tls"
-	"flag"
 	"io"
 	"log"
 	"net/http"
@@ -13,76 +12,82 @@ import (
 	qviper "github.com/quic-s/quics-client/pkg/viper"
 )
 
-func GetRestClient(path string) *bytes.Buffer {
+type RestClient struct {
+	qconf        *quic.Config
+	roundTripper *http3.RoundTripper
+	hclient      *http.Client
+}
 
-	flag.Parse()
-	url := "https://localhost:" + qviper.GetViperEnvVariables("REST_SERVER_PORT") + path
+func NewRestClient() *RestClient {
+	restClient := &RestClient{
+		qconf: &quic.Config{
+			KeepAlivePeriod: 60,
+		},
+	}
 
-	var qconf quic.Config
-
-	roundTripper := &http3.RoundTripper{
+	restClient.roundTripper = &http3.RoundTripper{
 		TLSClientConfig: &tls.Config{
-
 			InsecureSkipVerify: true,
 		},
-		QuicConfig: &qconf,
-	}
-	defer roundTripper.Close()
-	hclient := &http.Client{
-		Transport: roundTripper,
+		QuicConfig: restClient.qconf,
 	}
 
+	restClient.hclient = &http.Client{
+		Transport: restClient.roundTripper,
+	}
+	return restClient
+}
+
+func (r *RestClient) GetRequest(path string) *bytes.Buffer {
+
+	url := "https://localhost:" + qviper.GetViperEnvVariables("REST_SERVER_PORT") + path
+
+	// hclient := NewRestClient()
 	//getReqest, err := http.NewRequest("GET", urls, nil)
 
-	rsp, err := hclient.Get(url)
+	rsp, err := r.hclient.Get(url)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	log.Println("rsp : ", rsp)
+	log.Println("quics-client :rsp : ", rsp)
 
 	body := &bytes.Buffer{}
 	_, err = io.Copy(body, rsp.Body)
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Println("Response body : ", body.String())
+	log.Println("quics-client :Response body : ", body.String())
 	return body
 
 }
 
-func PostRestClient(path string, contentType string, content io.Reader) *bytes.Buffer {
+func (r *RestClient) PostRequest(path string, contentType string, content []byte) *bytes.Buffer {
 
-	flag.Parse()
 	url := "https://localhost:" + qviper.GetViperEnvVariables("REST_SERVER_PORT") + path
 
-	var qconf quic.Config
-
-	roundTripper := &http3.RoundTripper{
-		TLSClientConfig: &tls.Config{
-
-			InsecureSkipVerify: true,
-		},
-		QuicConfig: &qconf,
-	}
-	defer roundTripper.Close()
-	hclient := &http.Client{
-		Transport: roundTripper,
-	}
-
-	rsp, err := hclient.Post(url, contentType, content)
+	contentReader := bytes.NewReader(content)
+	rsp, err := r.hclient.Post(url, contentType, contentReader)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	log.Println("rsp : ", rsp)
+	log.Println("quics-client :rsp : ", rsp)
 
 	body := &bytes.Buffer{}
 	_, err = io.Copy(body, rsp.Body)
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Println("Response body : ", body.String())
+	log.Println("quics-client :Response body : ", body.String())
 	return body
+}
 
+func (r *RestClient) Close() error {
+	r.hclient.CloseIdleConnections()
+	err := r.roundTripper.Close()
+	if err != nil {
+		return err
+	}
+	return nil
 }

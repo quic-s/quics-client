@@ -7,9 +7,9 @@ import (
 )
 
 func Update(key string, value []byte) error {
-	db := Badgerdb
-
-	return db.Update(func(txn *badger.Txn) error {
+	mutex.Lock()
+	defer mutex.Unlock()
+	return badgerdb.Update(func(txn *badger.Txn) error {
 		if err := txn.Set([]byte(key), value); err != nil {
 			return err
 		}
@@ -18,11 +18,11 @@ func Update(key string, value []byte) error {
 }
 
 func View(key string) ([]byte, error) {
-	//db := InitDB()
+	mutex.Lock()
+	defer mutex.Unlock()
 	var value []byte
-	db := Badgerdb
 
-	err := db.View(func(txn *badger.Txn) error {
+	err := badgerdb.View(func(txn *badger.Txn) error {
 
 		item, err := txn.Get([]byte(key))
 		if err != nil {
@@ -41,8 +41,9 @@ func View(key string) ([]byte, error) {
 }
 
 func Delete(key string) error {
-	db := Badgerdb
-	err := db.Update(func(txn *badger.Txn) error {
+	mutex.Lock()
+	defer mutex.Unlock()
+	err := badgerdb.Update(func(txn *badger.Txn) error {
 		err := txn.Delete([]byte(key))
 		return err
 	})

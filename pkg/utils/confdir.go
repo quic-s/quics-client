@@ -15,6 +15,7 @@ type ViperConfig struct {
 // CreateDirIfNotExisted creates the quics folder if it does not exist
 func CreateDirIfNotExisted() {
 	quicsDir := GetQuicsDirPath()
+	log.Println(quicsDir)
 
 	_, err := os.Stat(quicsDir)
 
@@ -41,7 +42,7 @@ func GetQuicsDirPath() string {
 }
 
 func ReadEnvFile() map[string]string {
-	envPath := filepath.Join(GetQuicsDirPath(), ".qic.env")
+	envPath := filepath.Join(GetQuicsDirPath(), "qic.env")
 	file, err := os.Open(envPath)
 	if err != nil {
 		log.Fatal(err)
