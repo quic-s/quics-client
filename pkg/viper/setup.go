@@ -10,7 +10,7 @@ import (
 
 var QicEnvPath string
 
-func init() {
+func InitViper() {
 	tempDir, err := os.UserHomeDir()
 	if err != nil {
 		log.Fatal(err)
