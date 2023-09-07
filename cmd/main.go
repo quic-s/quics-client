@@ -24,6 +24,4 @@ func main() {
 	// connection.DirWatchStart()
 	// <-ch
 
-	//http.RestServerStart()
-
 }

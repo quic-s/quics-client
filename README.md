@@ -45,7 +45,14 @@ For make sync in real time, the Sync Metadata is saved in the local db, the **Ba
 
 - 1. Install Go 1.21 or later.
 - 2. Clone this repository.
-- 3. Run `go build ./cmd` in the root of the repository.
+    ```
+    https://github.com/quic-s/quics-client.git
+    ```
+- 3. Run the command in the root of the repository.
+    ```
+    go build ./cmd
+    ```
+
 
 
 ## How to use

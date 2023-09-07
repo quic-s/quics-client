@@ -7,12 +7,12 @@ import (
 )
 
 // LocalAbsToRoot converts an absolute path to a relative path to the root
-// ex) LocalAbsToRoot("/a/b/c", "a/b") -> "/c"
+// ex) LocalAbsToRoot("/a/rootDir/c", "/a/rootDir") -> "/rootDir/c"
 func LocalAbsToRoot(abs string, root string) string {
 
-	rootdir, _ := path.Split(root)
-	result := abs[len(rootdir):]
-	return "/" + result
+	rootdir, _ := path.Split(root) //rootdir == /a
+	result := abs[len(rootdir):]   //result == /roorDir/c
+	return result
 }
 
 // LocalRelToRoot converts a relative path to a relative path to the root
@@ -28,14 +28,16 @@ func LocalRelToRoot(rel string, root string) string {
 
 }
 
-// ex) SplitPathWithRoot("/a/b/c") -> ("/a/b", "/c")
+// ex) SplitBeforeAfterRoot("/a/rootDir/c") -> ("/a", "/rootDir/c")
 func SplitBeforeAfterRoot(path string) (string, string) {
 
 	dirlist := GetRootDirs()
 
-	for _, v := range dirlist {
+	for _, v := range dirlist { // v == /rootDir/c
 		if path[:len(v)] == v {
-			return path[:len(v)], path[len(v):]
+			dir, _ := filepath.Split(v)
+			log.Println("before, after :", dir[len(dir)-1:], " , ", path[len(dir)-1:])
+			return dir[:len(dir)-1], path[len(dir)-1:]
 		}
 
 	}

@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/fsnotify/fsnotify"
@@ -44,8 +45,8 @@ func init() {
 
 	// initialize server
 	err = QPClient.RecvMessageHandleFunc("test", func(conn *qp.Connection, msgType string, data []byte) {
-		log.Println("quics-client :quics-protocol: ", "message received ", conn.Conn.RemoteAddr().String())
-		log.Println("quics-client :quics-protocol: ", msgType, string(data))
+		log.Println("quics-client : ", " test message received ", conn.Conn.RemoteAddr().String())
+		log.Println("quics-client : ", msgType, string(data))
 	})
 	if err != nil {
 		log.Panic(err)
@@ -53,30 +54,51 @@ func init() {
 
 	// initialize server
 	err = QPClient.RecvMessageHandleFunc(MUSTSYNC, func(conn *qp.Connection, msgType string, data []byte) {
+		log.Println("quics-client : MUSTSYNC start ---------------")
 		mustSync := &types.MustSync{}
 		mustSync.Decode(data)
+
+		log.Println("quics-client :  mustsync decode message : ", mustSync)
 		// Get LocalAbsPath
-		localAbsPath := utils.GetRootDir(mustSync.AfterPath[1:])
+		splitedAfterPath := strings.Split(mustSync.AfterPath, "/")
+		rootDir := splitedAfterPath[1]            // -> rootDir
+		localAbsPath := utils.GetRootDir(rootDir) // -> /a/b/rootDir
+		log.Println("localAbsPath 1 : ", localAbsPath)
 		if localAbsPath == "" {
 			localAbsPaths := utils.GetRootDirs()
 			for _, l := range localAbsPaths {
 				_, rootDirName := filepath.Split(l)
-				if rootDirName == mustSync.AfterPath[1:] {
+				if rootDirName == rootDir {
 					localAbsPath = l
 					break
 				}
 			}
 		}
+		localAbsPath = filepath.Join(localAbsPath, mustSync.AfterPath[len(rootDir)+1:])
+		log.Println("localAbsPath 2 : ", localAbsPath)
 		// Get SyncMeta by LocalAbsPath
+		if _, err := os.Stat(localAbsPath); os.IsNotExist(err) && mustSync.LatestHash == "" {
+			log.Println("file deleted confirm")
+			badger.Delete(localAbsPath)
+			return
+		}
 		syncMetaByte, err := badger.View(localAbsPath)
 		if err != nil {
+
 			log.Panic(err)
 		}
+
 		syncMeta := &types.SyncMetadata{}
 		syncMeta.Decode(syncMetaByte)
+		log.Println("Before branch ------------------- ")
+		log.Println("Timestamp (sync) : ", syncMeta.LastUpdateTimestamp)
+		log.Println("Timestamp (must) : ", mustSync.LatestSyncTimestamp)
+		log.Println("Hash (sync) : ", syncMeta.LastUpdateHash)
+		log.Println("Hash (must) : ", mustSync.LatestHash)
 
 		// Check Condition for OverWrite
 		if syncMeta.LastSyncTimestamp == syncMeta.LastUpdateTimestamp && syncMeta.LastSyncHash == syncMeta.LastUpdateHash && mustSync.LatestSyncTimestamp > syncMeta.LastUpdateTimestamp {
+			log.Println("OverWrite -------------")
 			before, after := utils.SplitBeforeAfterRoot(localAbsPath)
 			// PLEASEFILE
 			pleaseFile := &types.PleaseFile{
@@ -85,33 +107,50 @@ func init() {
 				AfterPath:     after,
 				SyncTimestamp: mustSync.LatestSyncTimestamp,
 			}
-
+			log.Println("pleaseFile : ", pleaseFile)
 			Conn.SendMessage(PLEASEFILE, pleaseFile.Encode())
 			// when GIVEYOUFILE is come, badger.Update(localAbsPath, syncMeta.Encode()) is envoked
 		} else {
-			// TODO 6 else, PLEASESYNC
-			before, after := utils.SplitBeforeAfterRoot(localAbsPath)
-			prevSyncMetadata := types.SyncMetadata{}
-			prevSyncMetaByte, err := badger.View(localAbsPath)
-			if err != nil {
-				log.Panic(err)
-			}
-			prevSyncMetadata.Decode(prevSyncMetaByte)
+			//check "isUpdated" when broadcast
 
-			pleaseSync := types.PleaseSync{
-				Uuid:                viper.GetViperEnvVariables("UUID"),
-				Event:               CONFIRM,
-				BeforePath:          before,
-				AfterPath:           after,
-				LastUpdateTimestamp: prevSyncMetadata.LastUpdateTimestamp,
-				LastUpdateHash:      prevSyncMetadata.LastUpdateHash,
-			}
-			Conn.SendFileMessage(PLEASESYNC, pleaseSync.Encode(), localAbsPath)
+			if syncMeta.LastUpdateHash == mustSync.LatestHash && syncMeta.LastUpdateTimestamp == mustSync.LatestSyncTimestamp {
+				log.Println("Is Updated when broadcast ---------")
+				updateMetadata := &types.SyncMetadata{
+					Path:                localAbsPath,
+					LastUpdateTimestamp: syncMeta.LastUpdateTimestamp,
+					LastUpdateHash:      syncMeta.LastUpdateHash,
+					LastSyncTimestamp:   syncMeta.LastUpdateTimestamp,
+					LastSyncHash:        syncMeta.LastUpdateHash,
+				}
+				log.Println("updateMetadata : ", updateMetadata)
+				badger.Update(localAbsPath, updateMetadata.Encode())
 
+			} else {
+				// else, PLEASESYNC
+				// log.Println("Pleasesync ---------------")
+				// before, after := utils.SplitBeforeAfterRoot(localAbsPath)
+				// prevSyncMetadata := types.SyncMetadata{}
+				// prevSyncMetaByte, err := badger.View(localAbsPath)
+				// if err != nil {
+				// 	log.Panic(err)
+				// }
+				// prevSyncMetadata.Decode(prevSyncMetaByte)
+
+				// pleaseSync := types.PleaseSync{
+				// 	Uuid:                viper.GetViperEnvVariables("UUID"),
+				// 	Event:               CONFIRM,
+				// 	BeforePath:          before,
+				// 	AfterPath:           after,
+				// 	LastUpdateTimestamp: prevSyncMetadata.LastUpdateTimestamp,
+				// 	LastUpdateHash:      prevSyncMetadata.LastUpdateHash,
+				// }
+				// Conn.SendFileMessage(PLEASESYNC, pleaseSync.Encode(), localAbsPath)
+			}
 		}
 
 	})
 	if err != nil {
+		log.Println("quics-client : MUSTSYNC failed : ", err)
 		log.Panic(err)
 	}
 
@@ -231,7 +270,7 @@ func init() {
 				Event:               WRITE,
 			}
 			if _, err := os.Stat(localAbsPath); os.IsNotExist(err) {
-				pleaseSync.Event = DELETE
+				pleaseSync.Event = REMOVE
 				Conn.SendMessage(PLEASESYNC, pleaseSync.Encode())
 				return
 			}

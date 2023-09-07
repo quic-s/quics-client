@@ -12,18 +12,18 @@ import (
 )
 
 const (
-	SIpCommand      = "server-host"
-	SIpShortCommand = "d"
+	MyPortCommand      = "hport"
+	MyPortShortCommand = "p"
 
-	SPortCommand      = "server-port"
-	SPortShortCommand = "p"
-
-	MyPortCommand      = "rest-port"
-	MyPortShortCommand = "r"
+	StartConnectPortCommand = "port"
 )
 
 var (
 	MyPort string
+
+	StartConnectPort       string
+	StartConnectServerIp   string
+	StartConnectServerport string
 )
 
 func init() {
@@ -35,6 +35,19 @@ func init() {
 	rootCmd.AddCommand(ShutdownCmd())
 	rootCmd.AddCommand(RebootCmd())
 
+}
+func StartConnectCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "run",
+		Short: "start Client server and connect with Quics Server ",
+		Run: func(cmd *cobra.Command, args []string) {
+			// if MyPort != "" {
+			// 	viper.WriteViperEnvVariables("REST_SERVER_PORT", MyPort)
+			// }
+			// http3.RestServerStart()
+
+		},
+	}
 }
 
 func StartCmd() *cobra.Command {

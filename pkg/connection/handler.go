@@ -21,7 +21,7 @@ import (
 // message type
 const (
 	CREATE  string = "CREATE"
-	DELETE  string = "DELETE"
+	REMOVE  string = "REMOVE"
 	WRITE   string = "WRITE"
 	RENAME  string = "RENAME"
 	CONFIRM string = "CONFIRM"
@@ -86,7 +86,7 @@ func RegisterLocalRootDirRequest(LocalRootDir string, RootDirPW string) error {
 		Uuid:            viper.GetViperEnvVariables("UUID"),
 		RootDirPassword: RootDirPW,
 		BeforePath:      dir,
-		AfterPath:       "/" + rootdir,
+		AfterPath:       LocalRootDir[len(dir)-1:],
 	}
 	response, err := Conn.SendMessageWithResponse(LOCALROOT, body.Encode())
 	if err != nil {
@@ -123,12 +123,7 @@ func RegisterRemoteRootDirRequest(LocalRootAbsPath string, RootDirPW string) err
 	}
 	if string(response) == "OK" {
 		viper.WriteViperEnvVariables("ROOT_"+rootdir, LocalRootAbsPath)
-		_, err := os.Stat(LocalRootAbsPath)
-		if os.IsNotExist(err) {
-			log.Println("quics-client :quics-client: create new root directory coming from remote")
-			os.Create(LocalRootAbsPath)
-		}
-
+		os.MkdirAll(LocalRootAbsPath, 0755)
 		Conn.SendMessage(RESCAN, []byte(""))
 		return nil
 	}

@@ -94,7 +94,7 @@ func GetRootDir(key string) string {
 	key = "ROOT_" + key
 	rootDirList := GetRootDirs()
 	for k, v := range rootDirList {
-		if k == key {
+		if k == strings.ToUpper(key) {
 			return v
 		}
 	}

@@ -1,8 +1,9 @@
 package connection
 
 import (
+	"crypto/sha512"
+	"encoding/hex"
 	"fmt"
-	"hash/fnv"
 	"log"
 	"os"
 	"path/filepath"
@@ -33,23 +34,23 @@ func DirWatchStart() {
 					log.Println("quics-client : CREATE event ")
 					before, after := utils.SplitBeforeAfterRoot(filepath)
 					//get hash
-					h := fnv.New32a()
+					h := sha512.New()
 					h.Write([]byte(after)) // /root/*
-					time := info.ModTime()
-					h.Write([]byte(time.String()))
+					h.Write([]byte(info.ModTime().String()))
+					h.Write([]byte(info.Mode().String()))
 					h.Write([]byte(fmt.Sprint(info.Size())))
 
 					syncMetadata := types.SyncMetadata{
 						Path:                filepath,
 						LastUpdateTimestamp: 1,
-						LastUpdateHash:      string(h.Sum32()),
+						LastUpdateHash:      hex.EncodeToString(h.Sum(nil)),
 						LastSyncTimestamp:   0,
 						LastSyncHash:        "",
 					}
 					badger.Update(filepath, syncMetadata.Encode())
 					body := types.PleaseSync{
 						Uuid:                viper.GetViperEnvVariables("UUID"),
-						Event:               string(event.Op),
+						Event:               CREATE,
 						BeforePath:          before,
 						AfterPath:           after,
 						LastUpdateTimestamp: syncMetadata.LastUpdateTimestamp,
@@ -60,25 +61,26 @@ func DirWatchStart() {
 
 				if event.Op&fsnotify.Remove == fsnotify.Remove {
 					log.Println("quics-client : REMOVE event ")
-					Conn.SendMessage(DELETE, []byte(filepath))
+					Conn.SendMessage(REMOVE, []byte(filepath))
 					before, after := utils.SplitBeforeAfterRoot(filepath)
+
 					prevSyncMetaByte, err := badger.View(filepath)
 					if err != nil {
 						log.Println(err)
+						continue
 					}
 					PrevSyncMetadata := types.SyncMetadata{}
 					PrevSyncMetadata.Decode(prevSyncMetaByte)
 
 					pleaseSync := types.PleaseSync{
 						Uuid:                viper.GetViperEnvVariables("UUID"),
-						Event:               string(event.Op),
+						Event:               REMOVE,
 						BeforePath:          before,
 						AfterPath:           after,
 						LastUpdateTimestamp: PrevSyncMetadata.LastUpdateTimestamp + 1,
 						LastUpdateHash:      "",
 					}
 					Conn.SendFileMessage(PLEASESYNC, pleaseSync.Encode(), filepath)
-					badger.Delete(filepath)
 
 				}
 
@@ -90,10 +92,10 @@ func DirWatchStart() {
 					}
 					before, after := utils.SplitBeforeAfterRoot(filepath)
 					//get hash
-					h := fnv.New32a()
+					h := sha512.New()
 					h.Write([]byte(after)) // /root/*
-					time := info.ModTime()
-					h.Write([]byte(time.String()))
+					h.Write([]byte(info.ModTime().String()))
+					h.Write([]byte(info.Mode().String()))
 					h.Write([]byte(fmt.Sprint(info.Size())))
 
 					prevSyncMetaByte, err := badger.View(filepath)
@@ -106,7 +108,7 @@ func DirWatchStart() {
 					SyncMetadata := types.SyncMetadata{
 						Path:                prevSyncMetadata.Path,
 						LastUpdateTimestamp: prevSyncMetadata.LastUpdateTimestamp + 1,
-						LastUpdateHash:      string(h.Sum32()), // make new hash
+						LastUpdateHash:      hex.EncodeToString(h.Sum(nil)), // make new hash
 						LastSyncTimestamp:   prevSyncMetadata.LastSyncTimestamp,
 						LastSyncHash:        prevSyncMetadata.LastSyncHash,
 					}
@@ -114,16 +116,13 @@ func DirWatchStart() {
 
 					body := types.PleaseSync{
 						Uuid:                viper.GetViperEnvVariables("UUID"),
-						Event:               string(event.Op),
+						Event:               WRITE,
 						BeforePath:          before,
 						AfterPath:           after,
 						LastUpdateTimestamp: SyncMetadata.LastUpdateTimestamp,
 						LastUpdateHash:      SyncMetadata.LastUpdateHash,
 					}
 					Conn.SendFileMessage(PLEASESYNC, body.Encode(), filepath)
-				}
-				if event.Op&fsnotify.Rename == fsnotify.Rename {
-					log.Println("quics-client : RENAME event ")
 				}
 			case err, ok := <-Watcher.Errors:
 				if !ok {
