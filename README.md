@@ -50,25 +50,24 @@ For make sync in real time, the Sync Metadata is saved in the local db, the **Ba
 
 ## How to use
 
-| Command | Options | Description |
-| --- | --- | --- |
-| `qic start` | `--hPort` | Start the app. |
-| `qic reboot` | | Reboot the app. |
-| `qic shutdown` | | Shutdown the app. |
-| `qic --help` | | Show the help message. |
-| `qic config show` | | Show the config. |
-| `qic config server` | `--host` `--port` | Set the server IP address and port number. |
-| `qic config root` | `--abspath` `--name` | Set the root directory path and name. |
-| `qic config delete` | `--key` | Delete the config. |
-| `qic connect server` | `--password` | Connect to the server with password. |
-| `qic connect server` | `--host` `--port` `--password` | Connect to the server with IP address, port number and password. |
-| `qic disconnect server` | `--password` | Disconnect to the server with password. |
-| `qic connect root` | `--local` `--password` | Connect to the local root directory with password. |
-| `qic connect root` | `--remote` `--password` | Connect to the remote root directory with password. |
-| `qic connect list-remote` | | List the remote root directory. |
-| `qic disconnect root` | `--root` `--password` | Disconnect to the root directory with password. |
-| `qic sync status` | `--pick` | Show the status of the sync Metadata. |
-| `qic sync rescan` | | Ask Server rescan the sync. |
+| Tag | Command | Options |     Description     | HTTP Method | Endpoint |
+| --- | --- | --- | --- | --- | --- |
+|controller	| `qic start`| `--hPort`| start client |    |	|
+|controller	| `qic reboot`| | reboot client |    |	|
+|controller	| `qic shutdown`| | shutdown client |    |	|
+|controller	| `qic --help`| | show help |    |	|
+|config	| `qic config show`| | read .qis.env |    |	|
+|config	| `qic config server`|` --host {serverIp} --port  {port}`| set main server config |    |	|
+|config	| `qic config root`|` --abspath {dirpath}  --name {dir-NN}`| set root dir config |    |	|
+|config	| `qic config delete`|` --key {key}`| delete root dir config |    |	|
+|connect	| `qic connect server`|` --password {password} --host {serverIp} --port {port}`| connect to server | POST | `/api/v1/connect/server` |
+|disconnect	| `qic disconnect server`|` --password {ClientPassword}`| disconnect to server | POST | `/api/v1/disconnect/server`|
+|disconnect	| `qic disconnect root`|` --root {root dir/NN} --password {pw}`| disconnect to root dir | POST | `/api/v1/disconnect/root`|
+|connect	| `qic connect root`|` --local  {root-dir/NN} -- password {pw}`| connect to local root dir | POST | `/api/v1/connect/root/local`|
+|connect	| `qic connect root`|` --remote {root dir/NN} --password {pw}`| connect to remote root dir | POST | `/api/v1/connect/root/remote`|
+|connect	| `qic connect list-remote`| | get rootdir list | GET | `/api/v1/connect/list/remote`|
+|sync	| `qic sync status`|` --pick {root dir/NN}`| get root dir status | POST | `/api/v1/status/root/`|
+|sync	| `qic sync rescan`| | ask server to rescan all root dir | POST | `/api/v1/rescan`|
 
 
 
