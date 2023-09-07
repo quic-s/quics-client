@@ -2,6 +2,8 @@
 
 quics-client is a client for the QUIC-S. It is **continuous file synchornization tool** based on the QUIC protocol. 
 
+ **NOTICE**  If you want to use this tool, you should use the server of QUIC-S. You can find the server in [here](https://github.com/quic-s/quics.git) 
+
 
 ## Features
 
