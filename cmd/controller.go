@@ -5,7 +5,7 @@ import (
 	"os"
 
 	"github.com/quic-s/quics-client/pkg/app"
-	"github.com/quic-s/quics-client/pkg/http3"
+	"github.com/quic-s/quics-client/pkg/net/http3"
 
 	"github.com/quic-s/quics-client/pkg/viper"
 	"github.com/spf13/cobra"
@@ -36,20 +36,8 @@ func init() {
 	rootCmd.AddCommand(RebootCmd())
 
 }
-func StartConnectCmd() *cobra.Command {
-	return &cobra.Command{
-		Use:   "run",
-		Short: "start Client server and connect with Quics Server ",
-		Run: func(cmd *cobra.Command, args []string) {
-			// if MyPort != "" {
-			// 	viper.WriteViperEnvVariables("REST_SERVER_PORT", MyPort)
-			// }
-			// http3.RestServerStart()
 
-		},
-	}
-}
-
+// e.g. qic start
 func StartCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "start",
@@ -64,6 +52,7 @@ func StartCmd() *cobra.Command {
 	}
 }
 
+// e.g. qic reboot
 func RebootCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "reboot",
@@ -74,6 +63,7 @@ func RebootCmd() *cobra.Command {
 	}
 }
 
+// e.g. qic shutdown
 func ShutdownCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "shutdown",

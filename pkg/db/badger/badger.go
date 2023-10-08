@@ -6,6 +6,12 @@ import (
 	"github.com/dgraph-io/badger/v3"
 )
 
+type CRUD interface {
+	Update(key string, value []byte) error
+	View(key string) ([]byte, error)
+	Delete(key string) error
+}
+
 func Update(key string, value []byte) error {
 	mutex.Lock()
 	defer mutex.Unlock()

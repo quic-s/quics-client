@@ -32,6 +32,10 @@ type ShowStatusHTTP3 struct {
 	Filepath string `json:"filepath"`
 }
 
+type ChosenFilePathHTTP3 struct {
+	FilePath string `json:"filepath"`
+}
+
 func UnmarshalJSON(data []byte, dstStruct any) error {
 	err := json.Unmarshal(data, dstStruct)
 	if err != nil {

@@ -7,8 +7,9 @@ import (
 
 	"github.com/quic-go/quic-go"
 	"github.com/quic-go/quic-go/http3"
-	"github.com/quic-s/quics-client/pkg/badger"
-	"github.com/quic-s/quics-client/pkg/connection"
+
+	"github.com/quic-s/quics-client/pkg/db/badger"
+	"github.com/quic-s/quics-client/pkg/sync"
 	"github.com/quic-s/quics-client/pkg/utils"
 	"github.com/quic-s/quics-client/pkg/viper"
 )
@@ -17,18 +18,14 @@ func RestServerStart() {
 
 	log.Println("quics-client : starting port " + viper.GetViperEnvVariables("REST_SERVER_PORT"))
 	badger.OpenDB()
-	connection.InitWatcher()
+	sync.InitWatcher()
 
-	rootdirlist := utils.GetRootDirs()
-	for _, value := range rootdirlist {
-		if value != "" {
-			connection.DirWatchAdd(value)
-
-		}
-
+	rootdirlist := badger.GetRootDirList()
+	for _, rootdir := range rootdirlist {
+		sync.DirWatchAdd(rootdir.Path)
 	}
-	connection.DirWatchStart()
-	defer connection.WatchStop()
+	sync.DirWatchStart()
+	defer sync.WatchStop()
 	defer badger.CloseDB()
 
 	handler := SetupHandler()
