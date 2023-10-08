@@ -9,33 +9,32 @@ import (
 )
 
 const (
-	DirStatusCmd      = "pick"
+	DirStatusCmd      = "path"
 	DirStatusShortCmd = "p"
-
-	ReScanCmd      = "rescan"
-	ReScanShortCmd = "s"
 )
 
 var (
 	DirForStatus string
-	RescanDir    string
 )
 
 func init() {
 	SyncCmd := SyncCmd()
 
 	StatusCmd := StatusCmd()
+
 	SyncCmd.Flags().StringVarP(&DirForStatus, DirStatusCmd, DirStatusShortCmd, "", "decide local root directory")
 	if err := SyncCmd.MarkFlagRequired(DirStatusCmd); err != nil {
 		log.Println(err)
 	}
 	SyncCmd.AddCommand(StatusCmd)
 	RescanCmd := RescanCmd()
+
 	SyncCmd.AddCommand(RescanCmd)
 	rootCmd.AddCommand(SyncCmd)
 
 }
 
+// e.g. qic sync resacn
 func RescanCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "rescan",
@@ -49,10 +48,11 @@ func RescanCmd() *cobra.Command {
 	}
 }
 
+// e.g. qic sync status -p /home/username/sync/test.txt
 func StatusCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "status",
-		Short: "show status of sync dir",
+		Short: "show status of sync file",
 		Run: func(cmd *cobra.Command, args []string) {
 
 			restClient := NewRestClient()

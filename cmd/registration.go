@@ -93,6 +93,7 @@ func ConnectCmd() *cobra.Command {
 	}
 }
 
+// e.g. qic connect server --host 172.17.0.1 --port 8080 --password 1234
 func ConnectServerCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "server",
@@ -113,18 +114,20 @@ func ConnectServerCmd() *cobra.Command {
 			}
 			restClient := NewRestClient()
 			restClient.PostRequest("/api/v1/connect/server", "application/json", body)
+			restClient.Close()
 		},
 	}
 
 }
 
+// e.g. qic connect root --local /home/username/sync --password 1234
+// e.g. qic connect root --remote /home/username/sync --password 1234
 func ConnectRootCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "root",
 		Short: "make connection with root dir",
 		Run: func(cmd *cobra.Command, args []string) {
 
-			//TODO 경로외에 닉네임도 받을 수 있게 하기
 			restClient := NewRestClient()
 
 			if LocalRootDir != "" && RemoteRootDir == "" { // local to remote
@@ -155,11 +158,13 @@ func ConnectRootCmd() *cobra.Command {
 				restClient.PostRequest("/api/v1/connect/root/remote", "application/json", body)
 
 			}
+			restClient.Close()
 
 		},
 	}
 }
 
+// e.g. qic connect list-remote
 func ShowRemoteRootListCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "list-remote",
@@ -167,7 +172,7 @@ func ShowRemoteRootListCmd() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 
 			restClient := NewRestClient()
-			restClient.GetRequest("/api/v1/connect/list/remote")
+			log.Println(restClient.GetRequest("/api/v1/connect/list/remote"))
 		},
 	}
 }
@@ -217,14 +222,3 @@ func DisconnectRootCmd() *cobra.Command {
 		},
 	}
 }
-
-// DISCUSS/ Is it needed?
-// func PingCmd() *cobra.Command {
-// 	return &cobra.Command{
-// 		Use:  "ping",
-// 		Long: "check connection with server",
-// 		Run: func(cmd *cobra.Command, args []string) {
-// 			log.Println(connection.Ping())
-// 		},
-// 	}
-// }

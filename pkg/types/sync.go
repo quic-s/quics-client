@@ -5,29 +5,50 @@ import (
 	"encoding/gob"
 )
 
+type ConflictFileList []SyncMetadata
+
+// key = path
 type SyncMetadata struct { // Per file
-	Path                string // key, Local Absolute Path
+	BeforePath          string
+	AfterPath           string
 	LastUpdateTimestamp uint64 // Local File changed time
 	LastUpdateHash      string
 	LastSyncTimestamp   uint64 // Sync Success Time
 	LastSyncHash        string
+	Conflict            ConflictMetadata
 }
 
-type PleaseSync struct {
-	Uuid  string
-	Event string
-	// e.g., /home/ubuntu/rootDir/file
-	BeforePath          string // /home/ubuntu
-	AfterPath           string // /rootDir/file
-	LastUpdateTimestamp uint64
-	LastUpdateHash      string
+type ConflictMetadata struct {
+	BeforePath string
+	AfterPath  string
+
+	ServerDevice    string
+	ServerTimestamp uint64
+	ServerHash      string
+	ServerModDate   string
+
+	LocalDevice    string
+	LocalTimestamp uint64
+	LocalHash      string
+	LocalModDate   string
 }
 
-type MustSync struct {
-	LatestHash          string // depends on server
-	LatestSyncTimestamp uint64 // depends on server
-	BeforePath          string
-	AfterPath           string
+func (conflictFileList *ConflictFileList) Encode() []byte {
+	buffer := bytes.Buffer{}
+	encoder := gob.NewEncoder(&buffer)
+	if err := encoder.Encode(conflictFileList); err != nil {
+		panic(err)
+	}
+
+	return buffer.Bytes()
+}
+func (conflictFileList *ConflictFileList) Decode(data []byte) {
+	buffer := bytes.NewBuffer(data)
+	decoder := gob.NewDecoder(buffer)
+	if err := decoder.Decode(conflictFileList); err != nil {
+		panic(err)
+	}
+
 }
 
 func (syncMetadata *SyncMetadata) Encode() []byte {
@@ -43,43 +64,6 @@ func (syncMetadata *SyncMetadata) Decode(data []byte) {
 	buffer := bytes.NewBuffer(data)
 	decoder := gob.NewDecoder(buffer)
 	if err := decoder.Decode(syncMetadata); err != nil {
-		panic(err)
-	}
-
-}
-
-func (pleaseSync *PleaseSync) Encode() []byte {
-	buffer := bytes.Buffer{}
-	encoder := gob.NewEncoder(&buffer)
-	if err := encoder.Encode(pleaseSync); err != nil {
-		panic(err)
-	}
-
-	return buffer.Bytes()
-}
-func (pleaseSync *PleaseSync) Decode(data []byte) {
-	buffer := bytes.NewBuffer(data)
-	decoder := gob.NewDecoder(buffer)
-	if err := decoder.Decode(pleaseSync); err != nil {
-		panic(err)
-	}
-
-}
-
-func (mustSync *MustSync) Encode() []byte {
-	buffer := bytes.Buffer{}
-	encoder := gob.NewEncoder(&buffer)
-	if err := encoder.Encode(mustSync); err != nil {
-		panic(err)
-	}
-
-	return buffer.Bytes()
-}
-
-func (mustSync *MustSync) Decode(data []byte) {
-	buffer := bytes.NewBuffer(data)
-	decoder := gob.NewDecoder(buffer)
-	if err := decoder.Decode(mustSync); err != nil {
 		panic(err)
 	}
 

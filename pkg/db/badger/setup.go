@@ -22,7 +22,6 @@ func OpenDB() {
 	if err != nil {
 		log.Fatal(err)
 	}
-
 }
 
 func CloseDB() {

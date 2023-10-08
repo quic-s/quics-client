@@ -18,9 +18,6 @@ const (
 	DirAbsPathCommand      = "abspath"
 	DirAbsPathShortCommand = "d"
 
-	DirNNCommand      = "name"
-	DirNNShortCommand = "n"
-
 	DirNNDeleteCommand      = "key"
 	DirNNDeleteShortCommand = "k"
 )
@@ -44,18 +41,6 @@ func init() {
 
 	configCmd.AddCommand(ChangeServerConfig)
 
-	ChangeRootDirConfig := ChangeRootDirConfig()
-	ChangeRootDirConfig.Flags().StringVarP(&DirAbsPath, DirAbsPathCommand, DirAbsPathShortCommand, "", "directory absolute path")
-	ChangeRootDirConfig.Flags().StringVarP(&DirNN, DirNNCommand, DirNNShortCommand, "", "directory nickname")
-
-	if err := ChangeRootDirConfig.MarkFlagRequired(DirAbsPathCommand); err != nil {
-		log.Println(err)
-	}
-	if err := ChangeRootDirConfig.MarkFlagRequired(DirNNCommand); err != nil {
-		log.Println(err)
-	}
-
-	configCmd.AddCommand(ChangeRootDirConfig)
 	configCmd.AddCommand(ReadConfig())
 
 	DeleteConfig := DeleteConfig()
@@ -87,26 +72,6 @@ func ChangeServerConfig() *cobra.Command {
 			}
 		},
 	}
-
-}
-
-func ChangeRootDirConfig() *cobra.Command {
-	return &cobra.Command{
-		Use:   "root",
-		Short: "change root directory config",
-		Run: func(cmd *cobra.Command, args []string) {
-			//TODO 중복된 키, 중복된 value 금지
-			if utils.IsDuplicateKey(DirNN) {
-				log.Fatal("duplicate key, cannot overwrite")
-			}
-			if utils.IsDuplicateValue(DirAbsPath) {
-				log.Fatal("duplicate value, cannot overwrite")
-			}
-
-			viper.WriteViperEnvVariables("ROOT_"+DirNN, DirAbsPath)
-		},
-	}
-
 }
 
 func ReadConfig() *cobra.Command {

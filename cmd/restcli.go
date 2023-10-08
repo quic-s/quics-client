@@ -66,7 +66,10 @@ func (r *RestClient) PostRequest(path string, contentType string, content []byte
 	contentReader := bytes.NewReader(content)
 	rsp, err := r.hclient.Post(url, contentType, contentReader)
 	if err != nil {
+		// EOF ERROR
+		log.Println("eof error")
 		log.Println("quics-client : ", err)
+
 	}
 
 	buf := make([]byte, rsp.ContentLength)
