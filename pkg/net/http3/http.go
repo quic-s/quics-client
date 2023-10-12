@@ -18,6 +18,7 @@ func RestServerStart() {
 
 	log.Println("quics-client : starting port " + viper.GetViperEnvVariables("REST_SERVER_PORT"))
 	badger.OpenDB()
+	utils.InitJobList()
 	sync.InitWatcher()
 
 	rootdirlist := badger.GetRootDirList()
