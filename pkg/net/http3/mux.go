@@ -5,7 +5,6 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/quic-s/quics-client/pkg/db/badger"
 	"github.com/quic-s/quics-client/pkg/sync"
 	"github.com/quic-s/quics-client/pkg/types"
 )
@@ -141,12 +140,7 @@ func SetupHandler() http.Handler {
 	mux.HandleFunc("/api/v1/conflict/list", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case "GET":
-			conflictList := badger.GetConflictFileList()
-			result := ""
-			for i, conflict := range conflictList {
-				result += fmt.Sprintf("%d. %s\n", i, conflict)
-			}
-			w.Write([]byte("quics-client : [/api/v1/conflict/list] RESP : " + result))
+			//TODO GET Conflict List from server
 		}
 	})
 
@@ -158,10 +152,10 @@ func SetupHandler() http.Handler {
 			if err != nil {
 				w.Write([]byte("quics-client : [/api/v1/conflict/choose/server] ERROR : " + err.Error()))
 			}
-			err = sync.ChooseOne(chooseOne.FilePath, "SERVER")
-			if err != nil {
-				w.Write([]byte("quics-client : [/api/v1/conflict/choose/server] ERROR : " + err.Error()))
-			}
+			// err = sync.ChooseOne(chooseOne.FilePath, "SERVER")
+			// if err != nil {
+			// 	w.Write([]byte("quics-client : [/api/v1/conflict/choose/server] ERROR : " + err.Error()))
+			// }
 		}
 	})
 

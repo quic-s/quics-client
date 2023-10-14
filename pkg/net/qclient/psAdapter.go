@@ -5,43 +5,16 @@ import (
 	qstypes "github.com/quic-s/quics/pkg/types"
 )
 
-func SendFileMeta(stream *qp.Stream, UUID string, AfterPath string) (*qstypes.PleaseFileMetaRes, error) {
-
-	breq := qstypes.PleaseFileMetaReq{
-		UUID:      UUID,
-		AfterPath: AfterPath,
-	}
-
-	req, err := breq.Encode()
-	if err != nil {
-		return nil, err
-	}
-
-	err = stream.SendBMessage(req)
-	if err != nil {
-
-		return nil, err
-	}
-	data, err := stream.RecvBMessage()
-	if err != nil {
-
-		return nil, err
-	}
-	res := qstypes.PleaseFileMetaRes{}
-	res.Decode(data)
-	return &res, nil
-
-}
-
-func SendPleaseSync(stream *qp.Stream, UUID string, Event string, BeforePath string, AfterPath string, LastUpdateTimestamp uint64, LastUpdateHash string) (*qstypes.PleaseSyncRes, error) {
+func SendPleaseSync(stream *qp.Stream, UUID string, Event string, AfterPath string, LastUpdateTimestamp uint64, LastUpdateHash string, LastSyncHash string, fileMetadata qstypes.FileMetadata) (*qstypes.PleaseSyncRes, error) {
 
 	breq := qstypes.PleaseSyncReq{
 		UUID:                UUID,
 		Event:               Event,
-		BeforePath:          BeforePath,
 		AfterPath:           AfterPath,
+		LastSyncHash:        LastSyncHash,
 		LastUpdateTimestamp: LastUpdateTimestamp,
 		LastUpdateHash:      LastUpdateHash,
+		Metadata:            fileMetadata,
 	}
 
 	req, err := breq.Encode()

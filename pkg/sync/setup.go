@@ -5,6 +5,7 @@ import (
 	"log"
 	"net"
 	"strconv"
+	"sync"
 
 	"github.com/fsnotify/fsnotify"
 
@@ -16,6 +17,7 @@ var (
 	QPClient *qp.QP
 	Conn     *qp.Connection
 	Watcher  *fsnotify.Watcher
+	PSMut    map[byte]*sync.Mutex
 )
 
 func init() {
@@ -25,6 +27,13 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
+
+	PSMut = make(map[byte]*sync.Mutex)
+	for i := uint8(0); i < 16; i++ {
+		PSMut[i] = &sync.Mutex{}
+	}
+
+	MustSyncMain()
 
 }
 func InitWatcher() {
