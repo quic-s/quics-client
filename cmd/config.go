@@ -49,6 +49,7 @@ func init() {
 	if err := DeleteConfig.MarkFlagRequired(DirNNDeleteCommand); err != nil {
 		log.Println(err)
 	}
+
 	configCmd.AddCommand(DeleteConfig)
 
 	rootCmd.AddCommand(configCmd)
@@ -79,7 +80,7 @@ func ReadConfig() *cobra.Command {
 		Use:   "show",
 		Short: "show configs of quics client",
 		Run: func(cmd *cobra.Command, args []string) {
-			utils.ReadEnvFile()
+			log.Println(utils.ReadEnvFile())
 		},
 	}
 }

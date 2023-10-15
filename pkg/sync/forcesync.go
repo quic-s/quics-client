@@ -7,14 +7,15 @@ import (
 	"github.com/quic-s/quics-client/pkg/db/badger"
 	"github.com/quic-s/quics-client/pkg/net/qclient"
 	"github.com/quic-s/quics-client/pkg/types"
+	qp "github.com/quic-s/quics-protocol"
 	"github.com/quic-s/quics-protocol/pkg/stream"
 )
 
 func ForceSyncMain() {
 
-	UUID := badger.GetUUID()
-	err := Conn.OpenTransaction("FORCESYNC", func(stream *stream.Stream, transactionName string, transactionID []byte) error {
+	err := QPClient.RecvTransactionHandleFunc("FORCESYNC", func(conn *qp.Connection, stream *stream.Stream, transactionName string, transactionID []byte) error {
 		log.Println("quics-client: [FORCESYNC] transaction start")
+		UUID := badger.GetUUID()
 
 		// Recv ForceSync
 		req, Beforepath, err := qclient.ForceSyncRecvHandler(stream)
@@ -38,9 +39,11 @@ func ForceSyncMain() {
 		// Send ForceSyncRes
 		err = qclient.ForceSyncHandler(stream, UUID, req.AfterPath, req.LatestSyncTimestamp, req.LatestHash)
 		if err != nil {
+
 			return err
 		}
 
+		log.Println("quics-client: [FORCESYNC] transaction success")
 		return nil
 	})
 	if err != nil {

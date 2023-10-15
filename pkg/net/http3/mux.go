@@ -120,20 +120,20 @@ func SetupHandler() http.Handler {
 		}
 	})
 
-	mux.HandleFunc("/api/v1/status/root", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/api/v1/status", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case "POST":
 			showStatus := &types.ShowStatusHTTP3{}
 			err := types.UnmarshalJSONFromRequest(r, showStatus)
 			if err != nil {
-				w.Write([]byte("quics-client : [/api/v1/status/root] ERROR : " + err.Error()))
+				w.Write([]byte("quics-client : [/api/v1/status] ERROR : " + err.Error()))
 			}
 
 			result, err := sync.ShowStatus(showStatus.Filepath)
 			if err != nil {
-				w.Write([]byte("quics-client : [/api/v1/status/root] ERROR : " + err.Error()))
+				w.Write([]byte("quics-client : [/api/v1/status] ERROR : " + err.Error()))
 			}
-			w.Write([]byte("quics-client : [/api/v1/status/root] RESP : " + result))
+			w.Write([]byte("quics-client : [/api/v1/status] RESP : " + result))
 		}
 	})
 

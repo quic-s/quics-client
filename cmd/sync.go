@@ -22,7 +22,7 @@ func init() {
 
 	StatusCmd := StatusCmd()
 
-	SyncCmd.Flags().StringVarP(&DirForStatus, DirStatusCmd, DirStatusShortCmd, "", "decide local root directory")
+	StatusCmd.Flags().StringVarP(&DirForStatus, DirStatusCmd, DirStatusShortCmd, "", "decide local root directory")
 	if err := SyncCmd.MarkFlagRequired(DirStatusCmd); err != nil {
 		log.Println(err)
 	}
@@ -64,7 +64,7 @@ func StatusCmd() *cobra.Command {
 				log.Println(err)
 			}
 
-			restClient.PostRequest("/api/v1/status/root", "application/json", body)
+			restClient.PostRequest("/api/v1/status", "application/json", body)
 
 		},
 	}
