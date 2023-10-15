@@ -7,7 +7,7 @@ require (
 	github.com/fsnotify/fsnotify v1.6.0
 	github.com/google/uuid v1.3.1
 	github.com/quic-go/quic-go v0.39.0
-	github.com/quic-s/quics v0.0.0-20231008054617-e9ecdeb876f3
+	github.com/quic-s/quics v0.0.0-20231015053509-d2940519a3ac
 	github.com/quic-s/quics-protocol v0.0.0-20231007080707-81b358ef2f0b
 	github.com/spf13/cobra v1.7.0
 	github.com/spf13/viper v1.17.0

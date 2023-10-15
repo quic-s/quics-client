@@ -2,6 +2,7 @@ package qclient
 
 import (
 	"log"
+	"os"
 
 	qp "github.com/quic-s/quics-protocol"
 	qstypes "github.com/quic-s/quics/pkg/types"
@@ -41,13 +42,14 @@ func MustSyncHandler(stream *qp.Stream, UUID string, AfterPath string, LastSyncT
 
 }
 
-func GiveYouRecvHandler(stream *qp.Stream, path string) (*qstypes.GiveYouReq, error) {
+func GiveYouRecvHandler(stream *qp.Stream, path string, Isremoved bool) (*qstypes.GiveYouReq, error) {
 	data, fileInfo, fileContent, err := stream.RecvFileBMessage()
 
 	if err != nil {
 		log.Println("quics-client: ", err)
 		return nil, err
 	}
+
 	log.Println("quics-client: ", "file received")
 	req := qstypes.GiveYouReq{}
 	req.Decode(data)
@@ -57,6 +59,15 @@ func GiveYouRecvHandler(stream *qp.Stream, path string) (*qstypes.GiveYouReq, er
 		return nil, err
 	}
 	log.Println("quics-client: ", "file saved")
+
+	if Isremoved {
+		err = os.Remove(path)
+		if err != nil {
+			return nil, err
+		}
+		log.Println("quics-client: ", "file removed")
+		return nil, nil
+	}
 
 	return &req, nil
 

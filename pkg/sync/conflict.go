@@ -2,11 +2,13 @@ package sync
 
 import (
 	"fmt"
+	"path/filepath"
+	"reflect"
 
 	"github.com/quic-s/quics-client/pkg/db/badger"
 	"github.com/quic-s/quics-client/pkg/net/qclient"
-	"github.com/quic-s/quics-client/pkg/types"
 	"github.com/quic-s/quics-protocol/pkg/stream"
+	qstypes "github.com/quic-s/quics/pkg/types"
 )
 
 const (
@@ -14,66 +16,72 @@ const (
 	LOCAL  = "LOCAL"
 )
 
-func PrintTwoOptions(path string, serverModDate string, localModDate string) {
-	fmt.Println("---- FILE CONFLICTED ----")
-	fmt.Println(" path >> ", path)
-	fmt.Printf("Server ModDate: %s\n", serverModDate)
-	fmt.Printf("Local ModDate: %s\n", localModDate)
-	fmt.Println("-------------------------\n")
-	fmt.Println(" Choose one between two options, 1 or 2 ")
-	fmt.Println(" 1. File At Server")
-	fmt.Println(" 2. File At Local")
+func GetConflictList() ([]*qstypes.Conflict, error) {
+
+	UUID := badger.GetUUID()
+	result := []*qstypes.Conflict{}
+
+	err := Conn.OpenTransaction(qstypes.CONFLICTLIST, func(stream *stream.Stream, transactionName string, transactionID []byte) error {
+		cflist, err := qclient.SendAskConflictList(stream, UUID)
+		if err != nil {
+			return err
+		}
+		// Create a new slice of pointers to qstypes.Conflict
+		conflicts := make([]*qstypes.Conflict, len(cflist.Conflicts))
+		// Copy the elements from cflist.Conflicts to the new slice
+		for i, c := range cflist.Conflicts {
+			conflicts[i] = &c
+		}
+		result = conflicts
+		return nil
+
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
+
 }
 
+// @URL /api/v1/conflict/list
+func PrintCFOptions() (string, error) {
+	cflist, err := GetConflictList()
+	if err != nil {
+		return "", err
+	}
+	result := "\n\n"
+
+	for i, conflictFile := range cflist {
+		afterPath := conflictFile.AfterPath
+		beforePath := badger.GetBeforePathWithAfterPath(afterPath)
+		result += fmt.Sprintf("%d. %s\n", i+1, filepath.Join(beforePath, afterPath))
+		for UUID, candidate := range conflictFile.StagingFiles {
+			time, err := candidate.File.ModTime.MarshalText()
+			if err != nil {
+				return "", err
+			}
+
+			result += fmt.Sprintf("\t%s, Size > %d ModTime > %s\n", UUID, candidate.File.Size, time)
+		}
+	}
+	return result, nil
+}
+
+// @URL /api/v1/conflict/choose
 func ChooseOne(path string, Side string) error {
 
 	UUID := badger.GetUUID()
-	prevSyncMetadata := badger.GetSyncMetadata(path)
+	_, AfterPath := badger.SplitBeforeAfterRoot(path)
 
 	err := Conn.OpenTransaction("CONFLICT", func(stream *stream.Stream, transactionName string, transactionID []byte) error {
-		if Side == SERVER {
-			newTimestamp := prevSyncMetadata.Conflict.ServerTimestamp + 1
-			newHash := prevSyncMetadata.Conflict.ServerHash
-			_, err := qclient.SendPleaseServerFile(stream, path, UUID, prevSyncMetadata.AfterPath, prevSyncMetadata.Conflict.ServerTimestamp, newTimestamp, newHash)
-			if err != nil {
-				return err
-			}
 
-			//Update Sync Metadata
-			syncMetadata := types.SyncMetadata{
-				BeforePath:          prevSyncMetadata.BeforePath,
-				AfterPath:           prevSyncMetadata.AfterPath,
-				LastUpdateTimestamp: newTimestamp,
-				LastUpdateHash:      newHash,
-				LastSyncTimestamp:   newTimestamp,
-				LastSyncHash:        newHash,
-				Conflict:            prevSyncMetadata.Conflict,
-			}
-			badger.Update(path, syncMetadata.Encode())
-			badger.RemoveConflictAndFromConflictFileList(path)
-
-		} else if Side == LOCAL {
-			newTimestamp := prevSyncMetadata.Conflict.LocalTimestamp + 1
-			newHash := prevSyncMetadata.Conflict.LocalHash
-			_, err := qclient.SendPleaseLocalFile(stream, path, UUID, prevSyncMetadata.AfterPath, prevSyncMetadata.Conflict.LocalTimestamp, newTimestamp, newHash)
-			if err != nil {
-				return err
-			}
-
-			//Update Sync Metadata
-			syncMetadata := types.SyncMetadata{
-				BeforePath:          prevSyncMetadata.BeforePath,
-				AfterPath:           prevSyncMetadata.AfterPath,
-				LastUpdateTimestamp: newTimestamp,
-				LastUpdateHash:      newHash,
-				LastSyncTimestamp:   newTimestamp,
-				LastSyncHash:        newHash,
-				Conflict:            prevSyncMetadata.Conflict,
-			}
-			badger.Update(path, syncMetadata.Encode())
-			badger.RemoveConflictAndFromConflictFileList(path)
-		} else {
-			fmt.Errorf("chosenOne is not valid")
+		// Send ChooseOne
+		res, err := qclient.SendChooseOne(stream, UUID, AfterPath, Side)
+		if err != nil {
+			return err
+		}
+		if reflect.ValueOf(res).IsZero() {
+			return fmt.Errorf("cannot choose one")
 		}
 		return nil
 	})

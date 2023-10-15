@@ -1,9 +1,10 @@
 package sync
 
 import (
-	"fmt"
+	"crypto/sha1"
 	"log"
 	"os"
+	"time"
 
 	"github.com/quic-s/quics-client/pkg/db/badger"
 	"github.com/quic-s/quics-client/pkg/net/qclient"
@@ -15,20 +16,37 @@ import (
 	qstypes "github.com/quic-s/quics/pkg/types"
 )
 
-func PSwhenWrite(path string, info os.FileInfo) {
+func CanReturnPSByMS(prevSyncMeta *types.SyncMetadata, currSyncMeta *types.SyncMetadata) bool {
+
+	return prevSyncMeta.LastUpdateHash == currSyncMeta.LastUpdateHash
+
+}
+
+func PSwhenWrite(path string) {
+	h := sha1.New()
+	h.Write([]byte(path))
+	hash := h.Sum(nil)
+
+	PSMut[uint8(hash[0]%16)].Lock()
+	defer PSMut[uint8(hash[0]%16)].Unlock()
+
+	// pre request
+	time.Sleep(50 * time.Millisecond)
+	info, err := os.Stat(path)
+	if err != nil {
+		return
+	}
 	BeforePath, AfterPath := badger.SplitBeforeAfterRoot(path)
 	UUID := badger.GetUUID()
 	event := "WRITE"
-	localModTime := info.ModTime().String()
 
 	// Get PrevSyncMetadata
-	prevSyncMetaByte, err := badger.View(path)
-	if err != nil {
-		log.Println(err)
+	prevSyncMetadata := badger.GetSyncMetadata(path)
+	if prevSyncMetadata.LastSyncTimestamp == 0 {
+		return
 	}
-	prevSyncMetadata := types.SyncMetadata{}
-	prevSyncMetadata.Decode(prevSyncMetaByte)
 
+	// update syncMeta for events happened
 	syncMetadata := types.SyncMetadata{
 		BeforePath:          BeforePath,
 		AfterPath:           AfterPath,
@@ -36,43 +54,23 @@ func PSwhenWrite(path string, info os.FileInfo) {
 		LastUpdateHash:      utils.MakeHash(AfterPath, info), // make new hash
 		LastSyncTimestamp:   prevSyncMetadata.LastSyncTimestamp,
 		LastSyncHash:        prevSyncMetadata.LastSyncHash,
-		Conflict:            prevSyncMetadata.Conflict,
 	}
+
+	if CanReturnPSByMS(&prevSyncMetadata, &syncMetadata) {
+		return
+	}
+
 	badger.Update(path, syncMetadata.Encode())
 
 	// PleaseSync Transaction
 	Conn.OpenTransaction(qstypes.PLEASESYNC, func(stream *qp.Stream, transactionName string, transactionID []byte) error {
 		log.Println("quics-client : [PLEASESYNC] transaction start")
 
-		// Get FileMeta before PleaseSync
-		fileMetaRes, err := qclient.SendFileMeta(stream, UUID, AfterPath)
-		if err != nil {
-			log.Println("quics-client : ", err)
-
-			return err
-		}
-
-		// Check condition conflict before pleaseSync
-		if IsConfilcted(fileMetaRes.LatestSyncTimestamp, syncMetadata.LastUpdateTimestamp, fileMetaRes.LatestHash, syncMetadata.LastSyncHash) {
-			err := badger.AddConflictAndConflictFileList(path, types.ConflictMetadata{
-				ServerModDate:   fileMetaRes.ModifiedDate,
-				ServerDevice:    "",
-				ServerTimestamp: fileMetaRes.LatestSyncTimestamp,
-				ServerHash:      fileMetaRes.LatestHash,
-
-				LocalModDate:   localModTime,
-				LocalDevice:    "",
-				LocalTimestamp: syncMetadata.LastUpdateTimestamp,
-				LocalHash:      syncMetadata.LastUpdateHash,
-			})
-			if err != nil {
-				return err
-			}
-			return fmt.Errorf("quics-client : [PLEASESYNC] transaction fail")
-		}
+		serverfilemeta := qstypes.FileMetadata{}
+		serverfilemeta.DecodeFromOSFileInfo(info)
 
 		// Send PleaseSync
-		_, err = qclient.SendPleaseSync(stream, UUID, event, BeforePath, AfterPath, syncMetadata.LastUpdateTimestamp, syncMetadata.LastUpdateHash)
+		_, err = qclient.SendPleaseSync(stream, UUID, event, AfterPath, syncMetadata.LastUpdateTimestamp, syncMetadata.LastUpdateHash, syncMetadata.LastSyncHash, serverfilemeta)
 		if err != nil {
 			return err
 		}
@@ -85,7 +83,6 @@ func PSwhenWrite(path string, info os.FileInfo) {
 			LastUpdateHash:      syncMetadata.LastUpdateHash,
 			LastSyncTimestamp:   syncMetadata.LastUpdateTimestamp,
 			LastSyncHash:        syncMetadata.LastUpdateHash,
-			Conflict:            syncMetadata.Conflict,
 		}
 		badger.Update(path, syncMetadata.Encode())
 
@@ -100,11 +97,30 @@ func PSwhenWrite(path string, info os.FileInfo) {
 	})
 }
 
-func PSwhenCreate(path string, info os.FileInfo) {
+func PSwhenCreate(path string) {
+	h := sha1.New()
+	h.Write([]byte(path))
+	hash := h.Sum(nil)
+
+	PSMut[uint8(hash[0]%16)].Lock()
+	defer PSMut[uint8(hash[0]%16)].Unlock()
+
+	//pre-requests
+	time.Sleep(50 * time.Millisecond)
+	info, err := os.Stat(path)
+	if err != nil {
+		log.Println("quics-client : ", err)
+		return
+	}
 	BeforePath, AfterPath := badger.SplitBeforeAfterRoot(path)
+	log.Println(AfterPath)
 	UUID := badger.GetUUID()
 	event := "CREATE"
-	modDate := info.ModTime().String()
+
+	if badger.IsSyncMetadataExisted(path) {
+		return
+	}
+
 	syncMetadata := types.SyncMetadata{
 		BeforePath:          BeforePath,
 		AfterPath:           AfterPath,
@@ -112,43 +128,21 @@ func PSwhenCreate(path string, info os.FileInfo) {
 		LastUpdateHash:      utils.MakeHash(AfterPath, info), // make new hash
 		LastSyncTimestamp:   0,
 		LastSyncHash:        "",
-		Conflict:            types.ConflictMetadata{},
 	}
 	badger.Update(path, syncMetadata.Encode())
 	Conn.OpenTransaction(qstypes.PLEASESYNC, func(stream *stream.Stream, transactionName string, transactionID []byte) error {
 
 		log.Println("quics-client : [PLEASESYNC] transaction start")
 
-		// Get FileMeta before PleaseSync
-		fileMetaRes, err := qclient.SendFileMeta(stream, UUID, AfterPath)
-		if err != nil {
-			log.Println("quics-client : ", err)
-			return err
-		}
-
-		// Check condition to overwrite
-		if IsConfilcted(fileMetaRes.LatestSyncTimestamp, syncMetadata.LastUpdateTimestamp, fileMetaRes.LatestHash, syncMetadata.LastSyncHash) {
-
-			badger.AddConflictAndConflictFileList(path, types.ConflictMetadata{
-				ServerModDate:   fileMetaRes.ModifiedDate,
-				ServerDevice:    "",
-				ServerTimestamp: fileMetaRes.LatestSyncTimestamp,
-				ServerHash:      fileMetaRes.LatestHash,
-
-				LocalModDate:   modDate,
-				LocalDevice:    "",
-				LocalTimestamp: syncMetadata.LastUpdateTimestamp,
-				LocalHash:      syncMetadata.LastUpdateHash,
-			})
-			return fmt.Errorf("quics-client : [PLEASESYNC] transaction fail")
-		}
-
 		// Send PleaseSync
-		_, err = qclient.SendPleaseSync(stream, UUID, event, BeforePath, AfterPath, syncMetadata.LastUpdateTimestamp, syncMetadata.LastUpdateHash)
+
+		serverfilemeta := qstypes.FileMetadata{}
+		serverfilemeta.DecodeFromOSFileInfo(info)
+		// Send PleaseSync
+		_, err := qclient.SendPleaseSync(stream, UUID, event, AfterPath, syncMetadata.LastUpdateTimestamp, syncMetadata.LastUpdateHash, syncMetadata.LastSyncHash, serverfilemeta)
 		if err != nil {
 			return err
 		}
-
 		// Update Sync Timestamp and hash as same as update Timestamp and hash
 		syncMetadata = types.SyncMetadata{
 			BeforePath:          BeforePath,
@@ -157,7 +151,6 @@ func PSwhenCreate(path string, info os.FileInfo) {
 			LastUpdateHash:      syncMetadata.LastUpdateHash,
 			LastSyncTimestamp:   syncMetadata.LastUpdateTimestamp,
 			LastSyncHash:        syncMetadata.LastUpdateHash,
-			Conflict:            syncMetadata.Conflict,
 		}
 		badger.Update(path, syncMetadata.Encode())
 
@@ -174,16 +167,29 @@ func PSwhenCreate(path string, info os.FileInfo) {
 }
 
 func PSwhenRemove(path string) {
+	h := sha1.New()
+	h.Write([]byte(path))
+	hash := h.Sum(nil)
+
+	PSMut[uint8(hash[0]%16)].Lock()
+	defer PSMut[uint8(hash[0]%16)].Unlock()
+
+	//pre-request
 	BeforePath, AfterPath := badger.SplitBeforeAfterRoot(path)
 	UUID := badger.GetUUID()
 	event := "REMOVE"
+	_, err := os.Stat(path)
 
-	prevSyncMetaByte, err := badger.View(path)
-	if err != nil {
-		log.Println(err)
+	if !os.IsNotExist(err) {
+		return
 	}
-	prevSyncMetadata := types.SyncMetadata{}
-	prevSyncMetadata.Decode(prevSyncMetaByte)
+
+	if !badger.IsSyncMetadataExisted(path) {
+		return
+	}
+
+	// Update Sync Timestamp and hash as same as update Timestamp and hash
+	prevSyncMetadata := badger.GetSyncMetadata(path)
 
 	syncMetadata := types.SyncMetadata{
 		BeforePath:          BeforePath,
@@ -192,7 +198,6 @@ func PSwhenRemove(path string) {
 		LastUpdateHash:      "",
 		LastSyncTimestamp:   prevSyncMetadata.LastSyncTimestamp,
 		LastSyncHash:        prevSyncMetadata.LastSyncHash,
-		Conflict:            prevSyncMetadata.Conflict,
 	}
 	badger.Update(path, syncMetadata.Encode())
 
@@ -200,32 +205,20 @@ func PSwhenRemove(path string) {
 
 		log.Println("quics-client : [PLEASESYNC] transaction start")
 
-		// Get FileMeta before PleaseSync
-		fileMetaRes, err := qclient.SendFileMeta(stream, UUID, AfterPath)
+		// Send PleaseSync
+
+		serverfilemeta := qstypes.FileMetadata{
+			ModTime: time.Now(),
+		}
+
+		// Send PleaseSync
+		_, err := qclient.SendPleaseSync(stream, UUID, event, AfterPath, syncMetadata.LastUpdateTimestamp, syncMetadata.LastUpdateHash, syncMetadata.LastSyncHash, serverfilemeta)
 		if err != nil {
 			return err
 		}
 
-		// Check condition conflict
-		if !IsConfilcted(fileMetaRes.LatestSyncTimestamp, syncMetadata.LastUpdateTimestamp, fileMetaRes.LatestHash, syncMetadata.LastSyncHash) {
-
-			badger.AddConflictAndConflictFileList(path, types.ConflictMetadata{
-				ServerModDate:   fileMetaRes.ModifiedDate,
-				ServerDevice:    "",
-				ServerTimestamp: fileMetaRes.LatestSyncTimestamp,
-				ServerHash:      fileMetaRes.LatestHash,
-
-				LocalModDate:   "Removed, No ModDate",
-				LocalDevice:    "",
-				LocalTimestamp: syncMetadata.LastUpdateTimestamp,
-				LocalHash:      syncMetadata.LastUpdateHash,
-			})
-
-			return fmt.Errorf("Cannot remove file because of conflict")
-		}
-
-		// Send PleaseSync
-		_, err = qclient.SendPleaseSync(stream, UUID, event, BeforePath, AfterPath, syncMetadata.LastUpdateTimestamp, syncMetadata.LastUpdateHash)
+		// Send FileData
+		_, err = qclient.SendPleaseTake(stream, UUID, AfterPath, utils.GetEmptyFilePath())
 		if err != nil {
 			return err
 		}
@@ -241,11 +234,4 @@ func PSwhenRemove(path string) {
 		log.Println("quics-client : [PLEASESYNC] >> Remove >>", err)
 	}
 
-}
-
-func IsConfilcted(LastestSyncTimestamp uint64, LastUpdateTimestamp uint64, LastestSyncHash string, LastSyncHash string) bool {
-	if LastestSyncTimestamp < LastUpdateTimestamp && LastestSyncHash == LastSyncHash {
-		return true
-	}
-	return false
 }

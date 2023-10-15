@@ -41,6 +41,21 @@ func GetQuicsDirPath() string {
 	return filepath.Join(tempDir, ".quics")
 }
 
+// get new emptyfile in quicsDir,  if not exist then create new emptyfile
+func GetEmptyFilePath() string {
+	quicsDir := GetQuicsDirPath()
+	emptyFilePath := filepath.Join(quicsDir, "emptyfile")
+	_, err := os.Stat(emptyFilePath)
+	if os.IsNotExist(err) {
+		emptyFile, err := os.Create(emptyFilePath)
+		if err != nil {
+			log.Fatal(err)
+		}
+		emptyFile.Close()
+	}
+	return emptyFilePath
+}
+
 func ReadEnvFile() map[string]string {
 	envPath := filepath.Join(GetQuicsDirPath(), "qic.env")
 	file, err := os.Open(envPath)

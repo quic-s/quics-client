@@ -33,7 +33,8 @@ type ShowStatusHTTP3 struct {
 }
 
 type ChosenFilePathHTTP3 struct {
-	FilePath string `json:"filepath"`
+	FilePath  string `json:"filepath"`
+	Candidate string `json:"candidate"`
 }
 
 func UnmarshalJSON(data []byte, dstStruct any) error {

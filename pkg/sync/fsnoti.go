@@ -6,26 +6,28 @@ import (
 	"path/filepath"
 
 	"github.com/fsnotify/fsnotify"
-	"github.com/quic-s/quics-client/pkg/db/badger"
 )
 
 func DirWatchStart() {
+
 	go func() {
 		for {
 			select {
 			case event, ok := <-Watcher.Events:
 				if !ok {
-					return
+					continue
 				}
+
 				//event file
 				path := event.Name
 
-				if badger.IsConflictExisted(path) {
-					continue
-				}
+				// lock mutex by hash value of file path
+				// using hash value is to reduce the number of mutex
+
 				if event.Op&fsnotify.Remove == fsnotify.Remove {
 					log.Println("quics-client : REMOVE event ")
 					go PSwhenRemove(path)
+
 					continue
 
 				}
@@ -34,28 +36,33 @@ func DirWatchStart() {
 					log.Println("quics-client : ", err)
 					continue
 				}
+				// continue this case, when PS happened by MS
 
 				if event.Op&fsnotify.Create == fsnotify.Create && info.IsDir() { // IsDirectory
-					Watcher.Add(path)
+					DirWatchAdd(path)
 					continue
 				}
+
 				if event.Op&fsnotify.Create == fsnotify.Create && !info.IsDir() { // IsFile
 					log.Println("quics-client : CREATE event ")
-					go PSwhenCreate(path, info)
+					go PSwhenCreate(path)
+
 					continue
 				}
 
 				if event.Op&fsnotify.Write == fsnotify.Write {
 					log.Println("quics-client : WRITE event ")
-					go PSwhenWrite(path, info)
-					continue
+					go PSwhenWrite(path)
 
+					continue
 				}
+
 			case err, ok := <-Watcher.Errors:
 				if !ok {
-					return
+					continue
 				}
 				log.Println("quics-cleint : ", err)
+
 			}
 		}
 	}()

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"os"
 	"path/filepath"
 	"reflect"
 	"strconv"
@@ -13,6 +14,7 @@ import (
 
 	"github.com/quic-s/quics-client/pkg/db/badger"
 	"github.com/quic-s/quics-client/pkg/net/qclient"
+	"github.com/quic-s/quics-client/pkg/types"
 	"github.com/quic-s/quics-client/pkg/viper"
 	qp "github.com/quic-s/quics-protocol"
 	qstypes "github.com/quic-s/quics/pkg/types"
@@ -76,6 +78,16 @@ func RegistRootDir(LocalRootDir string, RootDirPW string, Side string) error {
 	dir, root := filepath.Split(LocalRootDir)
 	log.Println("[RegisterRootDir]")
 
+	//In Remote Register case
+	_, err := os.Stat(LocalRootDir)
+	if os.IsNotExist(err) {
+		err := os.MkdirAll(LocalRootDir, 0755)
+		if err != nil {
+			return err
+		}
+
+	}
+
 	// Add To RootDirList
 	badger.AddRootDir(LocalRootDir)
 	rootdir := badger.GetRootDir(LocalRootDir)
@@ -92,7 +104,7 @@ func RegistRootDir(LocalRootDir string, RootDirPW string, Side string) error {
 		transcationName = qstypes.SYNCROOTDIR
 	}
 
-	err := Conn.OpenTransaction(transcationName, func(stream *qp.Stream, transactionName string, transactionID []byte) error {
+	err = Conn.OpenTransaction(transcationName, func(stream *qp.Stream, transactionName string, transactionID []byte) error {
 		//TODO When get root folder from root then What about badger
 		registerRes, err := qclient.SendRootDirRegister(stream, badger.GetUUID(), RootDirPW, dir, "/"+root)
 		if err != nil {
@@ -104,10 +116,17 @@ func RegistRootDir(LocalRootDir string, RootDirPW string, Side string) error {
 		}
 
 		// Update IsRegistered
-		rootdir.IsRegistered = true
-		badger.Update(LocalRootDir, rootdir.Encode())
+		registeredRootdir := types.RootDir{
+			NickName:     rootdir.NickName,
+			Path:         rootdir.Path,
+			BeforePath:   rootdir.BeforePath,
+			AfterPath:    rootdir.AfterPath,
+			IsRegistered: true,
+		}
+		badger.Update(LocalRootDir, registeredRootdir.Encode())
 
 		DirWatchAdd(LocalRootDir)
+		log.Println("In ROOT DIR Register>>", Watcher.WatchList())
 		return nil
 
 	})

@@ -1,7 +1,6 @@
 package badger
 
 import (
-	"fmt"
 	"log"
 	"path/filepath"
 	"reflect"
@@ -21,10 +20,11 @@ func GetUUID() string {
 
 /*--------------SYNC METADATA ----------------*/
 
+// TODO NIL 반환 , 즉 아래 두개 함수를 합쳐야함
 func GetSyncMetadata(path string) types.SyncMetadata {
 	bsyncMetadata, err := View(path)
 	if err != nil {
-		log.Println(err)
+		return types.SyncMetadata{}
 	}
 	syncMetadata := types.SyncMetadata{}
 	syncMetadata.Decode(bsyncMetadata)
@@ -32,76 +32,12 @@ func GetSyncMetadata(path string) types.SyncMetadata {
 
 }
 
-// Check if SyncMetadata.Conflict is nil
-func IsConflictExisted(path string) bool {
-	syncMetadata := GetSyncMetadata(path)
-	conflictField := reflect.ValueOf(syncMetadata).FieldByName("Conflict")
-	if conflictField.IsZero() {
-		return false
-	}
-	return true
-}
-
 func IsSyncMetadataExisted(path string) bool {
 	syncMetadata := GetSyncMetadata(path)
-	if syncMetadata == (types.SyncMetadata{}) {
+	if reflect.ValueOf(syncMetadata).IsZero() {
 		return false
 	}
 	return true
-}
-
-/*---------- CONFLICT FILE LIST ------------*/
-
-func AddConflictAndConflictFileList(path string, conflictMetadata types.ConflictMetadata) error {
-	syncMetadata := GetSyncMetadata(path)
-	syncMetadata.Conflict = conflictMetadata
-	err := Update(path, syncMetadata.Encode())
-	if err != nil {
-		return err
-	}
-
-	conflictFileList := GetConflictFileList()
-	newConflictFileList := types.ConflictFileList{}
-	newConflictFileList = append(conflictFileList, syncMetadata)
-	err = Update("ConflictFileList", newConflictFileList.Encode())
-	if err != nil {
-		return err
-	}
-	return nil
-
-}
-
-func RemoveConflictAndFromConflictFileList(path string) error {
-	syncMetadata := GetSyncMetadata(path)
-	syncMetadata.Conflict = types.ConflictMetadata{}
-	err := Update(path, syncMetadata.Encode())
-	if err != nil {
-		return err
-	}
-
-	conflictFileList := GetConflictFileList()
-	newConflictFileList := types.ConflictFileList{}
-	for i, conflictFile := range conflictFileList {
-		if filepath.Join(conflictFile.BeforePath, conflictFile.AfterPath) == path {
-			newConflictFileList = append(conflictFileList[:i], conflictFileList[i+1:]...)
-			err := Update("ConflictFileList", newConflictFileList.Encode())
-			if err != nil {
-				return err
-			}
-			return nil
-		}
-	}
-	return fmt.Errorf("ConflictFileList does not have %s", path)
-}
-
-func GetConflictFileList() types.ConflictFileList {
-	bConflictFileList, err := View("ConflictFileList")
-	if err != nil {
-		log.Println(err)
-	}
-	conflictFileList := types.ConflictFileList{}
-	conflictFileList.Decode(bConflictFileList)
-	return conflictFileList
 }
 
 /*------------ROOT DIRECTORY---------------- */
@@ -130,7 +66,7 @@ func GetRootDir(path string) types.RootDir {
 
 func GetBeforePathWithAfterPath(afterPath string) string {
 	rootDirList := GetRootDirList()
-	rootbase := strings.Split(afterPath, "/")[0]
+	rootbase := strings.Split(afterPath, "/")[1]
 	for _, rootDir := range rootDirList {
 		if rootDir.AfterPath == "/"+rootbase {
 			return rootDir.BeforePath
@@ -164,7 +100,7 @@ func AddRootDir(path string) {
 	BeforePath, AfterPath := filepath.Split(path)
 	rootDir := types.RootDir{
 		Path:         path,
-		BeforePath:   BeforePath,
+		BeforePath:   BeforePath[:len(BeforePath)-1],
 		AfterPath:    "/" + AfterPath,
 		NickName:     nickname,
 		IsRegistered: false,
