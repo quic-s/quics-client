@@ -34,6 +34,7 @@ func init() {
 	}
 
 	MustSyncMain()
+	ForceSyncMain()
 
 }
 func InitWatcher() {

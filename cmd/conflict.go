@@ -9,8 +9,8 @@ import (
 )
 
 var (
-	ChosenLocalPath  string
-	ChosenRemotePath string
+	ChosenPath      string
+	ChosenCandidate string
 )
 
 func init() {
@@ -18,8 +18,14 @@ func init() {
 	ConflictCmd.AddCommand(ShowConflictListCmd())
 
 	ChooseOneCmd := ChooseOneCmd()
-	ChooseOneCmd.Flags().StringVarP(&ChosenLocalPath, "local", "l", "", "type local file absolute path")
-	ChooseOneCmd.Flags().StringVarP(&ChosenRemotePath, "remote", "r", "", "type remote file absolute path")
+	ChooseOneCmd.Flags().StringVarP(&ChosenPath, "path", "p", "", "chosen local path")
+	ChooseOneCmd.Flags().StringVarP(&ChosenCandidate, "candidate", "c", "", "chosen candidate uuid")
+	if err := ChooseOneCmd.MarkFlagRequired("path"); err != nil {
+		log.Println(err)
+	}
+	if err := ChooseOneCmd.MarkFlagRequired("candidate"); err != nil {
+		log.Println(err)
+	}
 
 	ConflictCmd.AddCommand(ChooseOneCmd)
 
@@ -46,38 +52,26 @@ func ShowConflictListCmd() *cobra.Command {
 	}
 }
 
-// e.g. qic conflict choose --local /home/username/sync/test.txt
-// e.g. qic conflict choose --remote /home/username/sync/test.txt
+// e.g. qic conflict choose --path /home/username/sync/test.txt --candidate 1234567890abc
 func ChooseOneCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "choose",
-		Short: "choose one between two options",
+		Short: "choose one among options",
 		Run: func(cmd *cobra.Command, args []string) {
 			restClient := NewRestClient()
+			defer restClient.Close()
 
-			if ChosenLocalPath != "" && ChosenRemotePath == "" { // In case Local
-				chosenFilePath := &types.ChosenFilePathHTTP3{
-					FilePath: ChosenLocalPath,
-				}
-				body, err := json.Marshal(chosenFilePath)
-				if err != nil {
-					log.Println(err)
-				}
-				bres := restClient.PostRequest("/api/v1/conflict/choose/local", "application/json", body)
-				log.Println(bres.String())
+			chosenFilePath := &types.ChosenFilePathHTTP3{
+				FilePath:  ChosenPath,
+				Candidate: ChosenCandidate,
 			}
+			body, err := json.Marshal(chosenFilePath)
+			if err != nil {
+				log.Println(err)
+			}
+			bres := restClient.PostRequest("/api/v1/conflict/choose/local", "application/json", body)
+			log.Println(bres.String())
 
-			if ChosenRemotePath != "" && ChosenLocalPath == "" { // In case Remote
-				chosenFilePath := &types.ChosenFilePathHTTP3{
-					FilePath: ChosenRemotePath,
-				}
-				body, err := json.Marshal(chosenFilePath)
-				if err != nil {
-					log.Println(err)
-				}
-				bres := restClient.PostRequest("/api/v1/conflict/choose/remote", "application/json", body)
-				log.Println(bres.String())
-			}
 		},
 	}
 }

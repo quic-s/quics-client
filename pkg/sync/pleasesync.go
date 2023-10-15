@@ -34,7 +34,6 @@ func PSwhenWrite(path string) {
 	time.Sleep(50 * time.Millisecond)
 	info, err := os.Stat(path)
 	if err != nil {
-		log.Println("quics-client : ", err)
 		return
 	}
 	BeforePath, AfterPath := badger.SplitBeforeAfterRoot(path)
@@ -43,6 +42,10 @@ func PSwhenWrite(path string) {
 
 	// Get PrevSyncMetadata
 	prevSyncMetadata := badger.GetSyncMetadata(path)
+	if prevSyncMetadata.LastSyncTimestamp == 0 {
+		return
+	}
+
 	// update syncMeta for events happened
 	syncMetadata := types.SyncMetadata{
 		BeforePath:          BeforePath,

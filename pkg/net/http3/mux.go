@@ -140,22 +140,27 @@ func SetupHandler() http.Handler {
 	mux.HandleFunc("/api/v1/conflict/list", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case "GET":
-			//TODO GET Conflict List from server
+			result, err := sync.PrintCFOptions()
+			if err != nil {
+				w.Write([]byte("quics-client : [/api/v1/conflict/list] ERROR : " + err.Error()))
+			}
+			w.Write([]byte("quics-client : [/api/v1/conflict/list] RESP : " + result))
+
 		}
 	})
 
-	mux.HandleFunc("/api/v1/conflict/choose/server", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/api/v1/conflict/choose", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case "POST":
 			chooseOne := &types.ChosenFilePathHTTP3{}
 			err := types.UnmarshalJSONFromRequest(r, chooseOne)
 			if err != nil {
-				w.Write([]byte("quics-client : [/api/v1/conflict/choose/server] ERROR : " + err.Error()))
+				w.Write([]byte("quics-client : [/api/v1/conflict/choose] ERROR : " + err.Error()))
 			}
-			// err = sync.ChooseOne(chooseOne.FilePath, "SERVER")
-			// if err != nil {
-			// 	w.Write([]byte("quics-client : [/api/v1/conflict/choose/server] ERROR : " + err.Error()))
-			// }
+			err = sync.ChooseOne(chooseOne.FilePath, chooseOne.Candidate)
+			if err != nil {
+				w.Write([]byte("quics-client : [/api/v1/conflict/choose] ERROR : " + err.Error()))
+			}
 		}
 	})
 
