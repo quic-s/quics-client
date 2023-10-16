@@ -3,11 +3,11 @@ package badger
 import (
 	"fmt"
 	"log"
-	"os"
 	"path/filepath"
 	"reflect"
 	"strings"
 
+	"github.com/dgraph-io/badger/v3"
 	"github.com/quic-s/quics-client/pkg/types"
 )
 
@@ -48,14 +48,25 @@ func GetAllSyncMetadataInRoot(rootpath string) ([]*types.SyncMetadata, error) {
 	syncMetadataList := []*types.SyncMetadata{}
 
 	// get all file path in rootpath
-	err := filepath.Walk(rootpath, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-		// if file is found then add to syncMetadataList else if dir is found then keep walk and add
-		if !info.IsDir() {
-			syncMetadata := GetSyncMetadata(path)
-			syncMetadataList = append(syncMetadataList, &syncMetadata)
+
+	prefix := rootpath
+	err := badgerdb.View(func(txn *badger.Txn) error {
+		opts := badger.DefaultIteratorOptions
+		opts.PrefetchSize = 10
+		it := txn.NewIterator(opts)
+		defer it.Close()
+
+		for it.Seek([]byte(prefix)); it.ValidForPrefix([]byte(prefix)); it.Next() {
+			item := it.Item()
+			val, err := item.ValueCopy(nil)
+			if err != nil {
+				return err
+			}
+
+			syncMetaItem := &types.SyncMetadata{}
+			syncMetaItem.Decode(val)
+
+			syncMetadataList = append(syncMetadataList, syncMetaItem)
 		}
 
 		return nil
@@ -73,7 +84,6 @@ func GetAllSyncMetadataAmongRoot() ([]*types.SyncMetadata, error) {
 	syncMetadataList := []*types.SyncMetadata{}
 	rootDirList := GetRootDirList()
 	for _, rootDir := range rootDirList {
-
 		syncMetadata, err := GetAllSyncMetadataInRoot(rootDir.Path)
 		if err != nil {
 			return nil, err
@@ -91,14 +101,9 @@ func GetRootDirList() []types.RootDir {
 	if err != nil {
 		return []types.RootDir{}
 	}
+
 	rootDirList := types.RootDirList{}
 	rootDirList.Decode(bRootDirList)
-
-	for i, rootDir := range rootDirList {
-		if !rootDir.IsRegistered {
-			rootDirList = append(rootDirList[:i], rootDirList[i+1:]...)
-		}
-	}
 
 	return rootDirList
 
@@ -158,6 +163,33 @@ func AddRootDir(path string) error {
 
 	newRootDirList := types.RootDirList{}
 	newRootDirList = append(rootDirList, rootDir)
+	err := Update("RootDirList", newRootDirList.Encode())
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func UpdateRootdirToRegistered(path string) error {
+	rootDirList := GetRootDirList()
+	// Update IsRegistered
+	newRootDirList := types.RootDirList{}
+	for _, rootDir := range rootDirList {
+		if rootDir.Path == path {
+
+			registeredRootdir := types.RootDir{
+				NickName:     rootDir.NickName,
+				Path:         rootDir.Path,
+				BeforePath:   rootDir.BeforePath,
+				AfterPath:    rootDir.AfterPath,
+				IsRegistered: true,
+			}
+
+			newRootDirList = append(newRootDirList, registeredRootdir)
+			continue
+		}
+		newRootDirList = append(newRootDirList, rootDir)
+	}
 	err := Update("RootDirList", newRootDirList.Encode())
 	if err != nil {
 		return err

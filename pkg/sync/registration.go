@@ -14,7 +14,6 @@ import (
 
 	"github.com/quic-s/quics-client/pkg/db/badger"
 	"github.com/quic-s/quics-client/pkg/net/qclient"
-	"github.com/quic-s/quics-client/pkg/types"
 	"github.com/quic-s/quics-client/pkg/viper"
 	qp "github.com/quic-s/quics-protocol"
 	qstypes "github.com/quic-s/quics/pkg/types"
@@ -69,6 +68,9 @@ func ClientRegistration(ClientPassword string, SIP string, SPort string) error {
 		return fmt.Errorf("[ClientRegistration] %s", err)
 	}
 	Conn = NewConn
+
+	go Rescan()
+
 	return nil
 }
 
@@ -119,18 +121,12 @@ func RegistRootDir(LocalRootDir string, RootDirPW string, Side string) error {
 			return fmt.Errorf("server cannot register root directory")
 		}
 
-		// Update IsRegistered
-		registeredRootdir := types.RootDir{
-			NickName:     rootdir.NickName,
-			Path:         rootdir.Path,
-			BeforePath:   rootdir.BeforePath,
-			AfterPath:    rootdir.AfterPath,
-			IsRegistered: true,
+		err = badger.UpdateRootdirToRegistered(LocalRootDir)
+		if err != nil {
+			return err
 		}
-		badger.Update(LocalRootDir, registeredRootdir.Encode())
 
 		DirWatchAdd(LocalRootDir)
-		log.Println("In ROOT DIR Register>>", Watcher.WatchList())
 		return nil
 
 	})
