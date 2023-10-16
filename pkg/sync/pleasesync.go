@@ -17,9 +17,7 @@ import (
 )
 
 func CanReturnPSByMS(prevSyncMeta *types.SyncMetadata, currSyncMeta *types.SyncMetadata) bool {
-
 	return prevSyncMeta.LastUpdateHash == currSyncMeta.LastUpdateHash
-
 }
 
 func PSwhenWrite(path string) {
@@ -27,8 +25,8 @@ func PSwhenWrite(path string) {
 	h.Write([]byte(path))
 	hash := h.Sum(nil)
 
-	PSMut[uint8(hash[0]%16)].Lock()
-	defer PSMut[uint8(hash[0]%16)].Unlock()
+	PSMut[uint8(hash[0]%PSMutModNum)].Lock()
+	defer PSMut[uint8(hash[0]%PSMutModNum)].Unlock()
 
 	// pre request
 	time.Sleep(50 * time.Millisecond)
@@ -42,9 +40,6 @@ func PSwhenWrite(path string) {
 
 	// Get PrevSyncMetadata
 	prevSyncMetadata := badger.GetSyncMetadata(path)
-	if prevSyncMetadata.LastSyncTimestamp == 0 {
-		return
-	}
 
 	// update syncMeta for events happened
 	syncMetadata := types.SyncMetadata{
@@ -102,8 +97,8 @@ func PSwhenCreate(path string) {
 	h.Write([]byte(path))
 	hash := h.Sum(nil)
 
-	PSMut[uint8(hash[0]%16)].Lock()
-	defer PSMut[uint8(hash[0]%16)].Unlock()
+	PSMut[uint8(hash[0]%PSMutModNum)].Lock()
+	defer PSMut[uint8(hash[0]%PSMutModNum)].Unlock()
 
 	//pre-requests
 	time.Sleep(50 * time.Millisecond)
@@ -171,8 +166,8 @@ func PSwhenRemove(path string) {
 	h.Write([]byte(path))
 	hash := h.Sum(nil)
 
-	PSMut[uint8(hash[0]%16)].Lock()
-	defer PSMut[uint8(hash[0]%16)].Unlock()
+	PSMut[uint8(hash[0]%PSMutModNum)].Lock()
+	defer PSMut[uint8(hash[0]%PSMutModNum)].Unlock()
 
 	//pre-request
 	BeforePath, AfterPath := badger.SplitBeforeAfterRoot(path)

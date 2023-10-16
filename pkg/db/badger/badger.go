@@ -1,8 +1,6 @@
 package badger
 
 import (
-	"log"
-
 	"github.com/dgraph-io/badger/v3"
 )
 
@@ -40,7 +38,7 @@ func View(key string) ([]byte, error) {
 		if err != nil {
 			return err
 		}
-		log.Printf("The value of key is %s\n", string(value))
+		//log.Printf("The value of key is %s\n", string(value))
 		return nil
 	})
 	return value, err

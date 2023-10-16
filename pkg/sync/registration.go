@@ -89,7 +89,11 @@ func RegistRootDir(LocalRootDir string, RootDirPW string, Side string) error {
 	}
 
 	// Add To RootDirList
-	badger.AddRootDir(LocalRootDir)
+	err = badger.AddRootDir(LocalRootDir)
+	if err != nil {
+		return fmt.Errorf("[RegisterRootDir] %s", err)
+	}
+
 	rootdir := badger.GetRootDir(LocalRootDir)
 
 	if reflect.ValueOf(rootdir).FieldByName("IsRegistered").Bool() == true {

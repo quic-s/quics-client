@@ -14,10 +14,11 @@ import (
 )
 
 var (
-	QPClient *qp.QP
-	Conn     *qp.Connection
-	Watcher  *fsnotify.Watcher
-	PSMut    map[byte]*sync.Mutex
+	QPClient    *qp.QP
+	Conn        *qp.Connection
+	Watcher     *fsnotify.Watcher
+	PSMut       map[byte]*sync.Mutex
+	PSMutModNum uint8 = 64
 )
 
 func init() {
@@ -29,12 +30,13 @@ func init() {
 	}
 
 	PSMut = make(map[byte]*sync.Mutex)
-	for i := uint8(0); i < 16; i++ {
+	for i := uint8(0); i < PSMutModNum; i++ {
 		PSMut[i] = &sync.Mutex{}
 	}
 
 	MustSyncMain()
 	ForceSyncMain()
+	FullScanMain()
 
 }
 func InitWatcher() {

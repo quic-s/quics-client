@@ -16,6 +16,10 @@ import (
 
 func RestServerStart() {
 
+	log.Println("\t-----------------------------------------\n")
+	log.Println("\t| 			quics-client start           |\n")
+	log.Println("\t-----------------------------------------\n")
+
 	log.Println("quics-client : starting port " + viper.GetViperEnvVariables("REST_SERVER_PORT"))
 	badger.OpenDB()
 	utils.InitJobList()

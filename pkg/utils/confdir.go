@@ -15,7 +15,6 @@ type ViperConfig struct {
 // CreateDirIfNotExisted creates the quics folder if it does not exist
 func CreateDirIfNotExisted() {
 	quicsDir := GetQuicsDirPath()
-	log.Println(quicsDir)
 
 	_, err := os.Stat(quicsDir)
 
