@@ -23,7 +23,7 @@ func init() {
 	StatusCmd := StatusCmd()
 
 	StatusCmd.Flags().StringVarP(&DirForStatus, DirStatusCmd, DirStatusShortCmd, "", "decide local root directory")
-	if err := SyncCmd.MarkFlagRequired(DirStatusCmd); err != nil {
+	if err := StatusCmd.MarkFlagRequired(DirStatusCmd); err != nil {
 		log.Println(err)
 	}
 	SyncCmd.AddCommand(StatusCmd)
@@ -34,7 +34,7 @@ func init() {
 
 }
 
-// e.g. qic sync resacn
+// e.g. qic sync rescan
 func RescanCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "rescan",
@@ -42,8 +42,8 @@ func RescanCmd() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 
 			restClient := NewRestClient()
-			//TODO GET으로 변환 해야하는지 테스트
-			restClient.PostRequest("/api/v1/rescan", "application/json", nil)
+			log.Println(restClient.GetRequest("/api/v1/rescan"))
+			restClient.Close()
 		},
 	}
 }
@@ -64,8 +64,8 @@ func StatusCmd() *cobra.Command {
 				log.Println(err)
 			}
 
-			restClient.PostRequest("/api/v1/status", "application/json", body)
-
+			log.Println(restClient.PostRequest("/api/v1/status", "application/json", body))
+			restClient.Close()
 		},
 	}
 }

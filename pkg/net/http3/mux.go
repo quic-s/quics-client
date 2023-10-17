@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/quic-s/quics-client/pkg/app"
 	"github.com/quic-s/quics-client/pkg/sync"
 	"github.com/quic-s/quics-client/pkg/types"
 )
@@ -30,7 +31,21 @@ func SetupHandler() http.Handler {
 				w.Write([]byte("quics-client : [/api/v1/connect/server] ERROR : " + err.Error()))
 			} else {
 				w.Write([]byte("quics-client : [/api/v1/connect/server] Resp : OK"))
+
 			}
+		}
+	})
+
+	mux.HandleFunc("/api/v1/reboot", func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case "GET":
+			err := app.Reboot()
+
+			if err != nil {
+				w.Write([]byte("quics-client : [/api/v1/shutdown] ERROR : " + err.Error()))
+			}
+			w.Write([]byte("quics-client : [/api/v1/shutdown] Resp : OK"))
+
 		}
 	})
 
@@ -115,8 +130,12 @@ func SetupHandler() http.Handler {
 
 	mux.HandleFunc("/api/v1/rescan", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
-		case "POST":
-			sync.Rescan()
+		case "GET":
+			err := sync.Rescan()
+			if err != nil {
+				w.Write([]byte("quics-client : [/api/v1/rescan] ERROR : " + err.Error()))
+			}
+			w.Write([]byte("quics-client : [/api/v1/rescan] RESP : OK"))
 		}
 	})
 
@@ -161,6 +180,7 @@ func SetupHandler() http.Handler {
 			if err != nil {
 				w.Write([]byte("quics-client : [/api/v1/conflict/choose] ERROR : " + err.Error()))
 			}
+			w.Write([]byte("quics-client : [/api/v1/conflict/choose] RESP : OK"))
 		}
 	})
 

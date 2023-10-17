@@ -15,6 +15,12 @@ type SyncMetadata struct { // Per file
 	LastSyncHash        string
 }
 
+type ComparingSyncMetadata struct {
+	Path      string
+	IsExisted bool
+	Sync      SyncMetadata
+}
+
 func (syncMetadata *SyncMetadata) Encode() []byte {
 	buffer := bytes.Buffer{}
 	encoder := gob.NewEncoder(&buffer)

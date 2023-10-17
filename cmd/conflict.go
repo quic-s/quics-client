@@ -69,7 +69,7 @@ func ChooseOneCmd() *cobra.Command {
 			if err != nil {
 				log.Println(err)
 			}
-			bres := restClient.PostRequest("/api/v1/conflict/choose/local", "application/json", body)
+			bres := restClient.PostRequest("/api/v1/conflict/choose", "application/json", body)
 			log.Println(bres.String())
 
 		},

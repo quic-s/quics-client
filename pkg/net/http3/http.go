@@ -16,16 +16,20 @@ import (
 
 func RestServerStart() {
 
+	log.Println("\t-----------------------------------------\n")
+	log.Println("\t 			quics-client start           \n")
+	log.Println("\t-----------------------------------------\n")
+
 	log.Println("quics-client : starting port " + viper.GetViperEnvVariables("REST_SERVER_PORT"))
 	badger.OpenDB()
-	utils.InitJobList()
-	sync.InitWatcher()
 
+	sync.InitWatcher()
+	sync.DirWatchStart()
 	rootdirlist := badger.GetRootDirList()
 	for _, rootdir := range rootdirlist {
 		sync.DirWatchAdd(rootdir.Path)
 	}
-	sync.DirWatchStart()
+
 	defer sync.WatchStop()
 	defer badger.CloseDB()
 

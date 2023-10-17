@@ -1,41 +1,42 @@
 package sync
 
 import (
-	"crypto/tls"
 	"log"
-	"net"
-	"strconv"
 	"sync"
 
 	"github.com/fsnotify/fsnotify"
 
-	"github.com/quic-s/quics-client/pkg/viper"
 	qp "github.com/quic-s/quics-protocol"
 )
 
 var (
-	QPClient *qp.QP
-	Conn     *qp.Connection
-	Watcher  *fsnotify.Watcher
-	PSMut    map[byte]*sync.Mutex
+	QPClient    *qp.QP
+	Conn        *qp.Connection
+	Watcher     *fsnotify.Watcher
+	PSMut       map[byte]*sync.Mutex
+	PSMutModNum uint8 = 64
 )
 
 func init() {
 
-	err := error(nil)
-	QPClient, err = qp.New(qp.LOG_LEVEL_INFO)
-	if err != nil {
-		panic(err)
-	}
+	InitQPClient()
 
 	PSMut = make(map[byte]*sync.Mutex)
-	for i := uint8(0); i < 16; i++ {
+	for i := uint8(0); i < PSMutModNum; i++ {
 		PSMut[i] = &sync.Mutex{}
 	}
 
 	MustSyncMain()
 	ForceSyncMain()
+	FullScanMain()
 
+}
+func InitQPClient() {
+	newClient, err := qp.New(qp.LOG_LEVEL_INFO)
+	if err != nil {
+		panic(err)
+	}
+	QPClient = newClient
 }
 func InitWatcher() {
 	// Create a new watcher.
@@ -49,20 +50,4 @@ func InitWatcher() {
 func CloseConnect() {
 	Conn.Close()
 	Conn = nil
-}
-
-func ReConnect() {
-	p, err := strconv.Atoi(viper.GetViperEnvVariables("QUICS_SERVER_PORT"))
-	if err != nil {
-		panic(err)
-	}
-
-	tlsConf := &tls.Config{
-		InsecureSkipVerify: true,
-		NextProtos:         []string{"quic-s"},
-	}
-	Conn, err = QPClient.Dial(&net.UDPAddr{IP: net.ParseIP(viper.GetViperEnvVariables("QUICS_SERVER_IP")), Port: p}, tlsConf)
-	if err != nil {
-		panic(err)
-	}
 }

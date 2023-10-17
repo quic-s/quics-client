@@ -9,20 +9,24 @@ import (
 	"path/filepath"
 	"reflect"
 	"strconv"
+	"time"
 
 	"github.com/google/uuid"
 
 	"github.com/quic-s/quics-client/pkg/db/badger"
 	"github.com/quic-s/quics-client/pkg/net/qclient"
-	"github.com/quic-s/quics-client/pkg/types"
+	"github.com/quic-s/quics-client/pkg/utils"
 	"github.com/quic-s/quics-client/pkg/viper"
 	qp "github.com/quic-s/quics-protocol"
 	qstypes "github.com/quic-s/quics/pkg/types"
 )
 
+var ClientPW string
+
 // @URL /api/v1/connect/server
 // ex. RegisterClientRequest("password", "S_IP", "S_PORT")
 func ClientRegistration(ClientPassword string, SIP string, SPort string) error {
+	ClientPW = ClientPassword
 	if SIP != "" {
 		viper.WriteViperEnvVariables("QUICS_SERVER_IP", SIP)
 	}
@@ -39,6 +43,48 @@ func ClientRegistration(ClientPassword string, SIP string, SPort string) error {
 		badger.Update("UUID", []byte(UUID))
 	}
 
+	var err error
+	Conn, err = ConnectServer(UUID)
+	if err != nil {
+		return err
+	}
+
+	go Rescan()
+	go Reconnect()
+
+	return nil
+}
+
+func Reconnect() {
+	prevStatus := true
+	for {
+
+		isOnline := utils.CheckInternetConnection()
+		if !prevStatus && isOnline {
+			ip := viper.GetViperEnvVariables("QUICS_SERVER_IP")
+			if ip == "" {
+				continue
+			}
+
+			Conn.Close()
+			Conn = nil
+			QPClient.Close()
+			QPClient = nil
+			InitQPClient()
+
+			port := viper.GetViperEnvVariables("QUICS_SERVER_PORT")
+			err := ClientRegistration(ClientPW, ip, port)
+			if err != nil {
+				log.Println(err)
+			}
+
+		}
+		prevStatus = isOnline
+		time.Sleep(5 * time.Second)
+	}
+}
+
+func ConnectServer(uuid string) (*qp.Connection, error) {
 	tlsConf := &tls.Config{
 		InsecureSkipVerify: true,
 		NextProtos:         []string{"quic-s"},
@@ -46,7 +92,7 @@ func ClientRegistration(ClientPassword string, SIP string, SPort string) error {
 
 	parsedPort, err := strconv.Atoi(viper.GetViperEnvVariables("QUICS_SERVER_PORT"))
 	if err != nil {
-		return fmt.Errorf("[ClientRegistration] %s", err)
+		return nil, fmt.Errorf("[ClientRegistration] %s", err)
 	}
 
 	NewConn, err := QPClient.DialWithTransaction(
@@ -56,7 +102,7 @@ func ClientRegistration(ClientPassword string, SIP string, SPort string) error {
 		tlsConf,
 		qstypes.REGISTERCLIENT,
 		func(stream *qp.Stream, transactionName string, transactionID []byte) error {
-			clientRegisterRes, err := qclient.SendClientRegister(stream, UUID, ClientPassword)
+			clientRegisterRes, err := qclient.SendClientRegister(stream, uuid, ClientPW)
 			if err != nil {
 				return err
 			}
@@ -66,10 +112,9 @@ func ClientRegistration(ClientPassword string, SIP string, SPort string) error {
 			return nil
 		})
 	if err != nil {
-		return fmt.Errorf("[ClientRegistration] %s", err)
+		return nil, fmt.Errorf("[ClientRegistration] %s", err)
 	}
-	Conn = NewConn
-	return nil
+	return NewConn, nil
 }
 
 // @URL /api/v1/connect/root/local
@@ -89,7 +134,11 @@ func RegistRootDir(LocalRootDir string, RootDirPW string, Side string) error {
 	}
 
 	// Add To RootDirList
-	badger.AddRootDir(LocalRootDir)
+	err = badger.AddRootDir(LocalRootDir)
+	if err != nil {
+		return fmt.Errorf("[RegisterRootDir] %s", err)
+	}
+
 	rootdir := badger.GetRootDir(LocalRootDir)
 
 	if reflect.ValueOf(rootdir).FieldByName("IsRegistered").Bool() == true {
@@ -115,18 +164,12 @@ func RegistRootDir(LocalRootDir string, RootDirPW string, Side string) error {
 			return fmt.Errorf("server cannot register root directory")
 		}
 
-		// Update IsRegistered
-		registeredRootdir := types.RootDir{
-			NickName:     rootdir.NickName,
-			Path:         rootdir.Path,
-			BeforePath:   rootdir.BeforePath,
-			AfterPath:    rootdir.AfterPath,
-			IsRegistered: true,
+		err = badger.UpdateRootdirToRegistered(LocalRootDir)
+		if err != nil {
+			return err
 		}
-		badger.Update(LocalRootDir, registeredRootdir.Encode())
 
 		DirWatchAdd(LocalRootDir)
-		log.Println("In ROOT DIR Register>>", Watcher.WatchList())
 		return nil
 
 	})

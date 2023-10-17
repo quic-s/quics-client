@@ -73,7 +73,7 @@ func ChooseOne(path string, Side string) error {
 	UUID := badger.GetUUID()
 	_, AfterPath := badger.SplitBeforeAfterRoot(path)
 
-	err := Conn.OpenTransaction("CONFLICT", func(stream *stream.Stream, transactionName string, transactionID []byte) error {
+	err := Conn.OpenTransaction("CHOOSEONE", func(stream *stream.Stream, transactionName string, transactionID []byte) error {
 
 		// Send ChooseOne
 		res, err := qclient.SendChooseOne(stream, UUID, AfterPath, Side)

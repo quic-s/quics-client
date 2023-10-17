@@ -2,9 +2,9 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"os"
 
-	"github.com/quic-s/quics-client/pkg/app"
 	"github.com/quic-s/quics-client/pkg/net/http3"
 
 	"github.com/quic-s/quics-client/pkg/viper"
@@ -58,7 +58,10 @@ func RebootCmd() *cobra.Command {
 		Use:   "reboot",
 		Short: "reboot the server",
 		Run: func(cmd *cobra.Command, args []string) {
-			app.Reboot()
+			restClient := NewRestClient()
+			bres := restClient.GetRequest("/api/v1/reboot")
+			log.Println(bres.String())
+
 		},
 	}
 }
