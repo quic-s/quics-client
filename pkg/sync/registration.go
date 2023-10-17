@@ -65,6 +65,13 @@ func Reconnect() {
 			if ip == "" {
 				continue
 			}
+
+			Conn.Close()
+			Conn = nil
+			QPClient.Close()
+			QPClient = nil
+			InitQPClient()
+
 			port := viper.GetViperEnvVariables("QUICS_SERVER_PORT")
 			err := ClientRegistration(ClientPW, ip, port)
 			if err != nil {
