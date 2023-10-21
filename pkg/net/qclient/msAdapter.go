@@ -93,3 +93,36 @@ func GiveYouHandler(stream *qp.Stream, UUID string, AfterPath string, LastSyncTi
 	}
 	return nil
 }
+
+func NeedContentRecvHandler(stream *qp.Stream) (*qstypes.NeedContentReq, error) {
+
+	data, err := stream.RecvBMessage()
+	if err != nil {
+		return nil, err
+	}
+	req := qstypes.NeedContentReq{}
+	req.Decode(data)
+	return &req, nil
+
+}
+
+func NeedContentHandler(stream *qp.Stream, UUID string, AfterPath string, LastUpdateTimestamp uint64, LastUpdateHash string) error {
+
+	bres := qstypes.NeedContentRes{
+		UUID:              UUID,
+		AfterPath:         AfterPath,
+		LastUpdateHash:    LastUpdateHash,
+		LastUpdateVersion: LastUpdateTimestamp,
+	}
+
+	res, err := bres.Encode()
+	if err != nil {
+		return err
+	}
+
+	err = stream.SendFileBMessage(res, AfterPath)
+	if err != nil {
+		return err
+	}
+	return nil
+}

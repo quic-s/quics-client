@@ -184,5 +184,105 @@ func SetupHandler() http.Handler {
 		}
 	})
 
+	mux.HandleFunc("/api/v1/conflict/download", func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case "POST":
+			conflictDownload := &types.ConflictDownloadHTTP3{}
+			err := types.UnmarshalJSONFromRequest(r, conflictDownload)
+			if err != nil {
+				w.Write([]byte("quics-client : [/api/v1/conflict/download] ERROR : " + err.Error()))
+			}
+			err = sync.ConflictDownload(conflictDownload.FilePath)
+			if err != nil {
+				w.Write([]byte("quics-client : [/api/v1/conflict/download] ERROR : " + err.Error()))
+			}
+			w.Write([]byte("quics-client : [/api/v1/conflict/download] RESP : OK"))
+		}
+	})
+
+	mux.HandleFunc("/api/v1/share/stop", func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case "POST":
+			body := &types.StopShareHTTP3{}
+			err := types.UnmarshalJSONFromRequest(r, body)
+			if err != nil {
+				w.Write([]byte("quics-client : [/api/v1/share/stop] ERROR : " + err.Error()))
+			}
+			err = sync.StopShare(body.Link)
+			if err != nil {
+				w.Write([]byte("quics-client : [/api/v1/share/stop] ERROR : " + err.Error()))
+			}
+			w.Write([]byte("quics-client : [/api/v1/share/stop] RESP : OK"))
+		}
+	})
+
+	mux.HandleFunc("/api/vi/share/file", func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case "POST":
+			body := &types.ShareFileHTTP3{}
+			err := types.UnmarshalJSONFromRequest(r, body)
+			if err != nil {
+				w.Write([]byte("quics-client : [/api/v1/share/file] ERROR : " + err.Error()))
+			}
+			link, err := sync.GetShareLink(body.FilePath, body.MaxCnt)
+			if err != nil {
+				w.Write([]byte("quics-client : [/api/v1/share/file] ERROR : " + err.Error()))
+			}
+			w.Write([]byte("quics-client : [/api/v1/share/file] RESP : " + link))
+		}
+	})
+
+	mux.HandleFunc("/api/v1/history/rollback", func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case "POST":
+			body := &types.HistoryRollBackHTTP3{}
+			err := types.UnmarshalJSONFromRequest(r, body)
+			if err != nil {
+				w.Write([]byte("quics-client : [/api/v1/history/rollback] ERROR : " + err.Error()))
+			}
+			err = sync.RollBack(body.FilePath, body.Version)
+			if err != nil {
+				w.Write([]byte("quics-client : [/api/v1/history/rollback] ERROR : " + err.Error()))
+			}
+			w.Write([]byte("quics-client : [/api/v1/history/rollback] RESP : OK"))
+		}
+	})
+
+	mux.HandleFunc("/api/v1/history/show", func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case "POST":
+			body := &types.HistoryShowHTTP3{}
+			err := types.UnmarshalJSONFromRequest(r, body)
+			if err != nil {
+				w.Write([]byte("quics-client : [/api/v1/history/show] ERROR : " + err.Error()))
+			}
+			historyList, err := sync.HistoryShow(body.FilePath, body.CntFromHead)
+			if err != nil {
+				w.Write([]byte("quics-client : [/api/v1/history/show] ERROR : " + err.Error()))
+			}
+			result := ""
+			for i, history := range historyList {
+				result += fmt.Sprintf("%d. %s\n", i, history)
+			}
+			w.Write([]byte("quics-client : [/api/v1/history/show] RESP : " + result))
+		}
+	})
+
+	mux.HandleFunc("/api/v1/history/download", func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case "POST":
+			body := &types.HistoryDownloadHTTP3{}
+			err := types.UnmarshalJSONFromRequest(r, body)
+			if err != nil {
+				w.Write([]byte("quics-client : [/api/v1/history/download] ERROR : " + err.Error()))
+			}
+			err := sync.HistoryDownload(body.FilePath, body.Version)
+			if err != nil {
+				w.Write([]byte("quics-client : [/api/v1/history/download] ERROR : " + err.Error()))
+			}
+			w.Write([]byte("quics-client : [/api/v1/history/download] RESP : " + result))
+		}
+	})
+
 	return mux
 }

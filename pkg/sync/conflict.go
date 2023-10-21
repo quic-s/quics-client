@@ -16,6 +16,30 @@ const (
 	LOCAL  = "LOCAL"
 )
 
+// @URL /api/v1/conflict/download
+func ConflictDownload(path string) error {
+	_, Afterpath := badger.SplitBeforeAfterRoot(path)
+
+	err := Conn.OpenTransaction("CONFLICTDOWNLOAD", func(stream *stream.Stream, transactionName string, transactionID []byte) error {
+		UUID := badger.GetUUID()
+		res, err := qclient.SendConflictDownload(stream, UUID, Afterpath)
+		if err != nil {
+			return err
+		}
+		if reflect.ValueOf(res).IsZero() {
+			return fmt.Errorf("cannot download conflict file")
+		}
+
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+	return nil
+
+}
+
+// @URL /api/v1/conflict/list
 func GetConflictList() ([]*qstypes.Conflict, error) {
 
 	UUID := badger.GetUUID()

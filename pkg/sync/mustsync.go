@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"path/filepath"
+	"reflect"
 
 	"github.com/quic-s/quics-client/pkg/db/badger"
 	"github.com/quic-s/quics-client/pkg/net/qclient"
@@ -11,6 +12,39 @@ import (
 	"github.com/quic-s/quics-client/pkg/types"
 	qp "github.com/quic-s/quics-protocol"
 )
+
+// TODO
+func NeedContentMain() {
+
+	err := QPClient.RecvTransactionHandleFunc("NEEDCONTENT", func(conn *qp.Connection, stream *qp.Stream, transactionName string, transactionID []byte) error {
+		req, err := qclient.NeedContentRecvHandler(stream)
+		if err != nil {
+			return err
+		}
+		// get paths
+		afterPath := req.AfterPath
+		beforePath := badger.GetBeforePathWithAfterPath(afterPath)
+		path := filepath.Join(beforePath, afterPath)
+
+		syncMeta := badger.GetSyncMetadata(path)
+		if reflect.ValueOf(syncMeta).IsZero() {
+			return fmt.Errorf("cannot find sync metadata")
+		}
+
+		if syncMeta.LastUpdateTimestamp == req.LatestUpdateTimestamp && syncMeta.LastUpdateHash == req.LatestUpdateHash {
+			err := qclient.NeedContentHandler(stream, badger.GetUUID(), afterPath, syncMeta.LastUpdateTimestamp, syncMeta.LastUpdateHash)
+			if err != nil {
+				return err
+			}
+		}
+		return nil
+
+	})
+	if err != nil {
+		log.Println("[NEEDCONTENT] ", err)
+	}
+
+}
 
 func MustSyncMain() {
 
