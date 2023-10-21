@@ -1,9 +1,12 @@
 package qclient
 
 import (
+	"errors"
 	"log"
 	"os"
+	"path/filepath"
 
+	"github.com/quic-s/quics-client/pkg/utils"
 	qp "github.com/quic-s/quics-protocol"
 	qstypes "github.com/quic-s/quics/pkg/types"
 )
@@ -42,7 +45,7 @@ func MustSyncHandler(stream *qp.Stream, UUID string, AfterPath string, LastSyncT
 
 }
 
-func GiveYouRecvHandler(stream *qp.Stream, path string, Isremoved bool) (*qstypes.GiveYouReq, error) {
+func GiveYouRecvHandler(stream *qp.Stream, path string, afterPath string, hash string, Isremoved bool) (*qstypes.GiveYouReq, error) {
 	data, fileInfo, fileContent, err := stream.RecvFileBMessage()
 
 	if err != nil {
@@ -54,13 +57,25 @@ func GiveYouRecvHandler(stream *qp.Stream, path string, Isremoved bool) (*qstype
 	req := qstypes.GiveYouReq{}
 	req.Decode(data)
 
-	err = fileInfo.WriteFileWithInfo(path, fileContent)
+	downloadDir := filepath.Join(utils.GetQuicsDirPath(), "download")
+
+	err = fileInfo.WriteFileWithInfo(filepath.Join(downloadDir, afterPath), fileContent)
 	if err != nil {
 		return nil, err
 	}
-	log.Println("quics-client: ", "file saved")
+	log.Println("quics-client: ", "file downloaded")
 
+	downloadFileInfo, err := os.Stat(filepath.Join(downloadDir, afterPath))
+	if err != nil {
+		return nil, err
+	}
+
+	// if file is removed, then remove file
 	if Isremoved {
+		err = os.Remove(filepath.Join(downloadDir, afterPath))
+		if err != nil {
+			return nil, err
+		}
 		err = os.Remove(path)
 		if err != nil {
 			return nil, err
@@ -69,8 +84,25 @@ func GiveYouRecvHandler(stream *qp.Stream, path string, Isremoved bool) (*qstype
 		return nil, nil
 	}
 
-	return &req, nil
+	// check hash is correct
+	h := utils.MakeHash(afterPath, downloadFileInfo)
+	if h != hash {
+		os.Remove(filepath.Join(downloadDir, afterPath))
+		return nil, errors.New("hash is not correct")
+	}
 
+	// copy file to path
+	err = utils.CopyFile(filepath.Join(downloadDir, afterPath), path)
+	if err != nil {
+		return nil, err
+	}
+
+	err = os.Remove(filepath.Join(downloadDir, afterPath))
+	if err != nil {
+		return nil, err
+	}
+
+	return &req, nil
 }
 
 func GiveYouHandler(stream *qp.Stream, UUID string, AfterPath string, LastSyncTimestamp uint64, LastSyncHash string) error {

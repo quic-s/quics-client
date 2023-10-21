@@ -104,7 +104,7 @@ func MustSyncMain() {
 		if mustSyncReq.LatestHash == "" {
 			IsRemoved = true
 		}
-		_, err = qclient.GiveYouRecvHandler(stream, path, IsRemoved)
+		_, err = qclient.GiveYouRecvHandler(stream, path, afterPath, mustSyncReq.LatestHash, IsRemoved)
 		if err != nil {
 			return err
 		}
