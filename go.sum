@@ -258,6 +258,8 @@ github.com/quic-s/quics v0.0.0-20231016113333-02c150e62fe1 h1:9si/Jn8FH9IAfMS/rQ
 github.com/quic-s/quics v0.0.0-20231016113333-02c150e62fe1/go.mod h1:35Dh8eNLEwMWacsU+t+hkW8JWs02315jREM81wFTCOg=
 github.com/quic-s/quics v0.0.0-20231017163803-d03854e9069a h1:160qewSyfKRtAcGwG8xtuVwqxEbkk/lDVZZt8a8IF4Y=
 github.com/quic-s/quics v0.0.0-20231017163803-d03854e9069a/go.mod h1:eQDkECDehkewssISgB16qONKKtJDxr62IV2R5ubXfyI=
+github.com/quic-s/quics v0.0.0-20231022050507-37265559d546 h1:QZuDkVhU73HrV7qF3+uV/1Zznn8/4SWszEyEFIq4YZI=
+github.com/quic-s/quics v0.0.0-20231022050507-37265559d546/go.mod h1:eQDkECDehkewssISgB16qONKKtJDxr62IV2R5ubXfyI=
 github.com/quic-s/quics-protocol v0.0.0-20231007080707-81b358ef2f0b h1:nYwaFH5UBkQFAjJnidVwmxZcD5d+fUQE2lWCLkh7zqc=
 github.com/quic-s/quics-protocol v0.0.0-20231007080707-81b358ef2f0b/go.mod h1:nmSpvk/GC9lbgIPSvzKNbUwnkkacCe/caK0QQsuzQ5Q=
 github.com/rogpeppe/go-internal v1.3.0/go.mod h1:M8bDsm7K2OlrFYOpmOWEs/qY81heoFRclV5y23lUDJ4=

@@ -141,10 +141,10 @@ func NeedContentRecvHandler(stream *qp.Stream) (*qstypes.NeedContentReq, error) 
 func NeedContentHandler(stream *qp.Stream, UUID string, AfterPath string, LastUpdateTimestamp uint64, LastUpdateHash string) error {
 
 	bres := qstypes.NeedContentRes{
-		UUID:              UUID,
-		AfterPath:         AfterPath,
-		LastUpdateHash:    LastUpdateHash,
-		LastUpdateVersion: LastUpdateTimestamp,
+		UUID:                UUID,
+		AfterPath:           AfterPath,
+		LastUpdateHash:      LastUpdateHash,
+		LastUpdateTimestamp: LastUpdateTimestamp,
 	}
 
 	res, err := bres.Encode()

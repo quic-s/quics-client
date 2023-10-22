@@ -11,7 +11,7 @@ import (
 )
 
 // @URL /api/v1/share/file
-func GetShareLink(path string, MaxCnt uint) (string, error) {
+func GetShareLink(path string, MaxCnt uint64) (string, error) {
 	UUID := badger.GetUUID()
 	_, AfterPath := badger.SplitBeforeAfterRoot(path)
 	link := ""

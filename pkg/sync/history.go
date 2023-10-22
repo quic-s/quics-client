@@ -42,7 +42,7 @@ func HistoryShow(path string, cntfromhead uint64) ([]qstypes.FileHistory, error)
 		if reflect.ValueOf(historyshowres).IsZero() {
 			return nil
 		}
-		historyShowRes = historyshowres.Histories
+		historyShowRes = historyshowres.History
 		return nil
 	})
 	if err != nil {

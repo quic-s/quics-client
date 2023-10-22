@@ -105,6 +105,6 @@ func SendConflictDownload(stream *qp.Stream, UUID string, AfterPath string) ([]*
 		}
 		result = append(result, &res)
 	}
-	return &result, nil
+	return result, nil
 
 }

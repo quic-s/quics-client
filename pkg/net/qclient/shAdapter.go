@@ -5,11 +5,11 @@ import (
 	qstypes "github.com/quic-s/quics/pkg/types"
 )
 
-func SendLinkShare(stream *qp.Stream, UUID string, AfterPath string, MaxCnt uint) (*qstypes.LinkShareRes, error) {
-	breq := qstypes.LinkShareReq{
+func SendLinkShare(stream *qp.Stream, UUID string, AfterPath string, MaxCnt uint64) (*qstypes.ShareRes, error) {
+	breq := qstypes.ShareReq{
 		UUID:      UUID,
 		AfterPath: AfterPath,
-		MaxCount:  MaxCnt,
+		MaxCnt:    MaxCnt,
 	}
 	req, err := breq.Encode()
 	if err != nil {
@@ -25,13 +25,13 @@ func SendLinkShare(stream *qp.Stream, UUID string, AfterPath string, MaxCnt uint
 	if err != nil {
 		return nil, err
 	}
-	res := qstypes.LinkShareRes{}
+	res := qstypes.ShareRes{}
 	res.Decode(data)
 	return &res, nil
 }
 
-func SendStopShare(stream *qp.Stream, UUID string, Link string) (*qstypes.StopLinkShareReq, error) {
-	breq := qstypes.StopLinkShareReq{
+func SendStopShare(stream *qp.Stream, UUID string, Link string) (*qstypes.StopShareRes, error) {
+	breq := qstypes.StopShareReq{
 		UUID: UUID,
 		Link: Link,
 	}
@@ -50,7 +50,7 @@ func SendStopShare(stream *qp.Stream, UUID string, Link string) (*qstypes.StopLi
 		return nil, err
 	}
 
-	res := qstypes.StopLinkShareRes{}
+	res := qstypes.StopShareRes{}
 	res.Decode(data)
 	return &res, nil
 }

@@ -32,7 +32,7 @@ func NeedContentMain() {
 			return fmt.Errorf("cannot find sync metadata")
 		}
 
-		if syncMeta.LastUpdateTimestamp == req.LatestUpdateTimestamp && syncMeta.LastUpdateHash == req.LatestUpdateHash {
+		if syncMeta.LastUpdateTimestamp == req.LastUpdateTimestamp && syncMeta.LastUpdateHash == req.LastUpdateHash {
 			err := qclient.NeedContentHandler(stream, badger.GetUUID(), afterPath, syncMeta.LastUpdateTimestamp, syncMeta.LastUpdateHash)
 			if err != nil {
 				return err

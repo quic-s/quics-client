@@ -224,7 +224,7 @@ func SetupHandler() http.Handler {
 			if err != nil {
 				w.Write([]byte("quics-client : [/api/v1/share/file] ERROR : " + err.Error()))
 			}
-			link, err := sync.GetShareLink(body.FilePath, body.MaxCnt)
+			link, err := sync.GetShareLink(body.FilePath, uint64(body.MaxCnt))
 			if err != nil {
 				w.Write([]byte("quics-client : [/api/v1/share/file] ERROR : " + err.Error()))
 			}
@@ -276,11 +276,11 @@ func SetupHandler() http.Handler {
 			if err != nil {
 				w.Write([]byte("quics-client : [/api/v1/history/download] ERROR : " + err.Error()))
 			}
-			err := sync.HistoryDownload(body.FilePath, body.Version)
+			err = sync.HistoryDownload(body.FilePath, body.Version)
 			if err != nil {
 				w.Write([]byte("quics-client : [/api/v1/history/download] ERROR : " + err.Error()))
 			}
-			w.Write([]byte("quics-client : [/api/v1/history/download] RESP : " + result))
+			w.Write([]byte("quics-client : [/api/v1/history/download] RESP : OK"))
 		}
 	})
 

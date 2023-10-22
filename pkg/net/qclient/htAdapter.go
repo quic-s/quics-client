@@ -4,9 +4,9 @@ import (
 	"path/filepath"
 	"strconv"
 
-	qstypes "github.com/quic-s/quics-client/pkg/types"
 	"github.com/quic-s/quics-client/pkg/utils"
 	qp "github.com/quic-s/quics-protocol"
+	qstypes "github.com/quic-s/quics/pkg/types"
 )
 
 func SendRollBack(stream *qp.Stream, UUID string, AfterPath string, Version uint64) (*qstypes.RollBackRes, error) {
