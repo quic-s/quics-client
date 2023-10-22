@@ -1,6 +1,7 @@
 package sync
 
 import (
+	"crypto/sha1"
 	"fmt"
 	"log"
 	"path/filepath"
@@ -57,6 +58,15 @@ func MustSyncMain() {
 		// get paths
 		afterPath := mustSyncReq.AfterPath
 		beforePath := badger.GetBeforePathWithAfterPath(afterPath)
+
+		// lock mutex for each path
+		h := sha1.New()
+		h.Write([]byte(afterPath))
+		hash := h.Sum(nil)
+
+		PSMut[uint8(hash[0]%PSMutModNum)].Lock()
+		defer PSMut[uint8(hash[0]%PSMutModNum)].Unlock()
+
 		path := filepath.Join(beforePath, afterPath)
 		log.Println("before path >> ", beforePath)
 		log.Println("after path >> ", afterPath)
