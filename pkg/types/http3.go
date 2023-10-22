@@ -37,6 +37,34 @@ type ChosenFilePathHTTP3 struct {
 	Candidate string `json:"candidate"`
 }
 
+type ShareFileHTTP3 struct {
+	FilePath string `json:"filepath"`
+	MaxCnt   uint   `json:"maxcnt"`
+}
+
+type StopShareHTTP3 struct {
+	Link string `json:"link"`
+}
+
+type HistoryRollBackHTTP3 struct {
+	FilePath string `json:"filepath"`
+	Version  uint64 `json:"version"`
+}
+
+type HistoryShowHTTP3 struct {
+	FilePath    string `json:"filepath"`
+	CntFromHead uint64 `json:"cntfromhead"`
+}
+
+type HistoryDownloadHTTP3 struct {
+	FilePath string `json:"filepath"`
+	Version  uint64 `json:"version"`
+}
+
+type ConflictDownloadHTTP3 struct {
+	FilePath string `json:"filepath"`
+}
+
 func UnmarshalJSON(data []byte, dstStruct any) error {
 	err := json.Unmarshal(data, dstStruct)
 	if err != nil {

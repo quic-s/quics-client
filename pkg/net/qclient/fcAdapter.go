@@ -1,10 +1,13 @@
 package qclient
 
 import (
+	"errors"
 	"log"
+	"os"
 	"path/filepath"
 
 	"github.com/quic-s/quics-client/pkg/db/badger"
+	"github.com/quic-s/quics-client/pkg/utils"
 	qp "github.com/quic-s/quics-protocol"
 	qstypes "github.com/quic-s/quics/pkg/types"
 )
@@ -25,10 +28,41 @@ func ForceSyncRecvHandler(stream *qp.Stream) (*qstypes.MustSyncReq, string, erro
 	BeforePath := badger.GetBeforePathWithAfterPath(req.AfterPath)
 	path := filepath.Join(BeforePath, req.AfterPath)
 
-	err = fileInfo.WriteFileWithInfo(path, fileContent)
+	tempDir := utils.GetQuicsTempDirPath()
+
+	err = fileInfo.WriteFileWithInfo(filepath.Join(tempDir, req.AfterPath), fileContent)
 	if err != nil {
 		return nil, "", err
 	}
+	log.Println("quics-client: ", "file downloaded")
+
+	tempFileInfo, err := os.Stat(filepath.Join(tempDir, req.AfterPath))
+	if err != nil {
+		return nil, "", err
+	}
+
+	// check hash is correct
+	h := utils.MakeHash(req.AfterPath, tempFileInfo)
+	if h != req.LatestHash {
+		os.Remove(filepath.Join(tempDir, req.AfterPath))
+		return nil, "", errors.New("hash is not correct")
+	}
+
+	// copy file to path
+	err = utils.CopyFile(filepath.Join(tempDir, req.AfterPath), path)
+	if err != nil {
+		return nil, "", err
+	}
+
+	err = os.Remove(filepath.Join(tempDir, req.AfterPath))
+	if err != nil {
+		return nil, "", err
+	}
+
+	// err = fileInfo.WriteFileWithInfo(path, fileContent)
+	// if err != nil {
+	// 	return nil, "", err
+	// }
 	log.Println("quics-client: ", "file saved")
 
 	return &req, BeforePath, nil

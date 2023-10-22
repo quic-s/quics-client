@@ -40,6 +40,33 @@ func GetQuicsDirPath() string {
 	return filepath.Join(tempDir, ".quics")
 }
 
+// get temp dir path
+func GetQuicsTempDirPath() string {
+	quicsPath := GetQuicsDirPath()
+	tempDirPath := filepath.Join(quicsPath, "temp")
+	_, err := os.Stat(tempDirPath)
+	if os.IsNotExist(err) {
+		err = os.Mkdir(tempDirPath, 0755)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+	return tempDirPath
+}
+
+// get conflict dir path
+func GetDownloadDirPath() string {
+	// get user home directory
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		log.Fatal(err)
+	}
+	// append "Downloads" subdirectory
+	downloadDir := filepath.Join(homeDir, "Downloads")
+	// print download directory
+	return downloadDir
+}
+
 // get new emptyfile in quicsDir,  if not exist then create new emptyfile
 func GetEmptyFilePath() string {
 	quicsDir := GetQuicsDirPath()

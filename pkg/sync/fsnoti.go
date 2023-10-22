@@ -26,10 +26,8 @@ func DirWatchStart() {
 
 				if event.Op&fsnotify.Remove == fsnotify.Remove {
 					log.Println("quics-client : REMOVE event ")
-					go PSwhenRemove(path)
-
+					go PleaseSync(path)
 					continue
-
 				}
 				info, err := os.Stat(path)
 				if err != nil {
@@ -45,15 +43,13 @@ func DirWatchStart() {
 
 				if event.Op&fsnotify.Create == fsnotify.Create && !info.IsDir() { // IsFile
 					log.Println("quics-client : CREATE event ")
-					go PSwhenCreate(path)
-
+					go PleaseSync(path)
 					continue
 				}
 
 				if event.Op&fsnotify.Write == fsnotify.Write {
 					log.Println("quics-client : WRITE event ")
-					go PSwhenWrite(path)
-
+					go PleaseSync(path)
 					continue
 				}
 

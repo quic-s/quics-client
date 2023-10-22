@@ -11,6 +11,8 @@ import (
 var (
 	ChosenPath      string
 	ChosenCandidate string
+
+	ConflictDownloadPath string
 )
 
 func init() {
@@ -28,6 +30,13 @@ func init() {
 	}
 
 	ConflictCmd.AddCommand(ChooseOneCmd)
+
+	CfDownloadCmd := CfDownloadCmd()
+	CfDownloadCmd.Flags().StringVarP(&ConflictDownloadPath, "path", "p", "", "path of file")
+	if err := CfDownloadCmd.MarkFlagRequired("path"); err != nil {
+		log.Println(err)
+	}
+	ConflictCmd.AddCommand(CfDownloadCmd)
 
 	rootCmd.AddCommand(ConflictCmd)
 }
@@ -70,6 +79,30 @@ func ChooseOneCmd() *cobra.Command {
 				log.Println(err)
 			}
 			bres := restClient.PostRequest("/api/v1/conflict/choose", "application/json", body)
+			log.Println(bres.String())
+
+		},
+	}
+}
+
+// e.g. qic conflict download
+func CfDownloadCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "download",
+		Short: "download file from conflict section",
+		Run: func(cmd *cobra.Command, args []string) {
+			restClient := NewRestClient()
+			defer restClient.Close()
+
+			conflictDownloadReq := &types.ConflictDownloadHTTP3{
+				FilePath: ConflictDownloadPath,
+			}
+			breq, err := json.Marshal(conflictDownloadReq)
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			bres := restClient.PostRequest("/api/v1/history/download", "application/json", breq)
 			log.Println(bres.String())
 
 		},
