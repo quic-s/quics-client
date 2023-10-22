@@ -57,22 +57,22 @@ func GiveYouRecvHandler(stream *qp.Stream, path string, afterPath string, hash s
 	req := qstypes.GiveYouReq{}
 	req.Decode(data)
 
-	downloadDir := filepath.Join(utils.GetQuicsDirPath(), "download")
+	tempDir := utils.GetQuicsTempDirPath()
 
-	err = fileInfo.WriteFileWithInfo(filepath.Join(downloadDir, afterPath), fileContent)
+	err = fileInfo.WriteFileWithInfo(filepath.Join(tempDir, afterPath), fileContent)
 	if err != nil {
 		return nil, err
 	}
 	log.Println("quics-client: ", "file downloaded")
 
-	downloadFileInfo, err := os.Stat(filepath.Join(downloadDir, afterPath))
+	tempFileInfo, err := os.Stat(filepath.Join(tempDir, afterPath))
 	if err != nil {
 		return nil, err
 	}
 
 	// if file is removed, then remove file
 	if Isremoved {
-		err = os.Remove(filepath.Join(downloadDir, afterPath))
+		err = os.Remove(filepath.Join(tempDir, afterPath))
 		if err != nil {
 			return nil, err
 		}
@@ -85,19 +85,19 @@ func GiveYouRecvHandler(stream *qp.Stream, path string, afterPath string, hash s
 	}
 
 	// check hash is correct
-	h := utils.MakeHash(afterPath, downloadFileInfo)
+	h := utils.MakeHash(afterPath, tempFileInfo)
 	if h != hash {
-		os.Remove(filepath.Join(downloadDir, afterPath))
+		os.Remove(filepath.Join(tempDir, afterPath))
 		return nil, errors.New("hash is not correct")
 	}
 
 	// copy file to path
-	err = utils.CopyFile(filepath.Join(downloadDir, afterPath), path)
+	err = utils.CopyFile(filepath.Join(tempDir, afterPath), path)
 	if err != nil {
 		return nil, err
 	}
 
-	err = os.Remove(filepath.Join(downloadDir, afterPath))
+	err = os.Remove(filepath.Join(tempDir, afterPath))
 	if err != nil {
 		return nil, err
 	}

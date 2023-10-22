@@ -28,33 +28,33 @@ func ForceSyncRecvHandler(stream *qp.Stream) (*qstypes.MustSyncReq, string, erro
 	BeforePath := badger.GetBeforePathWithAfterPath(req.AfterPath)
 	path := filepath.Join(BeforePath, req.AfterPath)
 
-	downloadDir := filepath.Join(utils.GetQuicsDirPath(), "download")
+	tempDir := utils.GetQuicsTempDirPath()
 
-	err = fileInfo.WriteFileWithInfo(filepath.Join(downloadDir, req.AfterPath), fileContent)
+	err = fileInfo.WriteFileWithInfo(filepath.Join(tempDir, req.AfterPath), fileContent)
 	if err != nil {
 		return nil, "", err
 	}
 	log.Println("quics-client: ", "file downloaded")
 
-	downloadFileInfo, err := os.Stat(filepath.Join(downloadDir, req.AfterPath))
+	tempFileInfo, err := os.Stat(filepath.Join(tempDir, req.AfterPath))
 	if err != nil {
 		return nil, "", err
 	}
 
 	// check hash is correct
-	h := utils.MakeHash(req.AfterPath, downloadFileInfo)
+	h := utils.MakeHash(req.AfterPath, tempFileInfo)
 	if h != req.LatestHash {
-		os.Remove(filepath.Join(downloadDir, req.AfterPath))
+		os.Remove(filepath.Join(tempDir, req.AfterPath))
 		return nil, "", errors.New("hash is not correct")
 	}
 
 	// copy file to path
-	err = utils.CopyFile(filepath.Join(downloadDir, req.AfterPath), path)
+	err = utils.CopyFile(filepath.Join(tempDir, req.AfterPath), path)
 	if err != nil {
 		return nil, "", err
 	}
 
-	err = os.Remove(filepath.Join(downloadDir, req.AfterPath))
+	err = os.Remove(filepath.Join(tempDir, req.AfterPath))
 	if err != nil {
 		return nil, "", err
 	}

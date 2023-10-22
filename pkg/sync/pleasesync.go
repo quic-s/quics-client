@@ -28,6 +28,7 @@ func PleaseSync(path string) {
 
 	fileInfo, err := os.Stat(path)
 	if os.IsNotExist(err) {
+		// when file is removed
 		PSwhenRemove(path)
 		return
 	} else if err != nil {
@@ -40,6 +41,7 @@ func PleaseSync(path string) {
 	}
 
 	if !badger.IsSyncMetadataExisted(path) {
+		// when file is created
 		PSwhenCreate(path, fileInfo)
 		return
 	}
@@ -59,6 +61,7 @@ func PleaseSync(path string) {
 		LastSyncHash:        prevSyncMetadata.LastSyncHash,
 	}
 
+	// if LastUpdateHash is same, then return
 	if CanReturnPSByMS(&prevSyncMetadata, &syncMetadata) {
 		return
 	}
@@ -71,39 +74,9 @@ func CanReturnPSByMS(prevSyncMeta *types.SyncMetadata, currSyncMeta *types.SyncM
 }
 
 func PSwhenWrite(path string, info os.FileInfo, syncMetadata types.SyncMetadata) {
-	// h := sha1.New()
-	// h.Write([]byte(path))
-	// hash := h.Sum(nil)
-
-	// PSMut[uint8(hash[0]%PSMutModNum)].Lock()
-	// defer PSMut[uint8(hash[0]%PSMutModNum)].Unlock()
-
-	// // pre request
-	// time.Sleep(50 * time.Millisecond)
-	// info, err := os.Stat(path)
-	// if err != nil {
-	// 	return
-	// }
 	BeforePath, AfterPath := badger.SplitBeforeAfterRoot(path)
 	UUID := badger.GetUUID()
 	event := "WRITE"
-
-	// // Get PrevSyncMetadata
-	// prevSyncMetadata := badger.GetSyncMetadata(path)
-
-	// // update syncMeta for events happened
-	// syncMetadata := types.SyncMetadata{
-	// 	BeforePath:          BeforePath,
-	// 	AfterPath:           AfterPath,
-	// 	LastUpdateTimestamp: prevSyncMetadata.LastUpdateTimestamp + 1,
-	// 	LastUpdateHash:      utils.MakeHash(AfterPath, info), // make new hash
-	// 	LastSyncTimestamp:   prevSyncMetadata.LastSyncTimestamp,
-	// 	LastSyncHash:        prevSyncMetadata.LastSyncHash,
-	// }
-
-	// if CanReturnPSByMS(&prevSyncMetadata, &syncMetadata) {
-	// 	return
-	// }
 
 	badger.Update(path, syncMetadata.Encode())
 
@@ -143,28 +116,10 @@ func PSwhenWrite(path string, info os.FileInfo, syncMetadata types.SyncMetadata)
 }
 
 func PSwhenCreate(path string, info os.FileInfo) {
-	// h := sha1.New()
-	// h.Write([]byte(path))
-	// hash := h.Sum(nil)
-
-	// PSMut[uint8(hash[0]%PSMutModNum)].Lock()
-	// defer PSMut[uint8(hash[0]%PSMutModNum)].Unlock()
-
-	// //pre-requests
-	// time.Sleep(50 * time.Millisecond)
-	// info, err := os.Stat(path)
-	// if err != nil {
-	// 	log.Println("quics-client : ", err)
-	// 	return
-	// }
 	BeforePath, AfterPath := badger.SplitBeforeAfterRoot(path)
 	log.Println(AfterPath)
 	UUID := badger.GetUUID()
 	event := "CREATE"
-
-	// if badger.IsSyncMetadataExisted(path) {
-	// 	return
-	// }
 
 	syncMetadata := types.SyncMetadata{
 		BeforePath:          BeforePath,
@@ -212,26 +167,11 @@ func PSwhenCreate(path string, info os.FileInfo) {
 }
 
 func PSwhenRemove(path string) {
-	// h := sha1.New()
-	// h.Write([]byte(path))
-	// hash := h.Sum(nil)
-
-	// PSMut[uint8(hash[0]%PSMutModNum)].Lock()
-	// defer PSMut[uint8(hash[0]%PSMutModNum)].Unlock()
-
 	//pre-request
 	BeforePath, AfterPath := badger.SplitBeforeAfterRoot(path)
 	UUID := badger.GetUUID()
 	event := "REMOVE"
 	_, err := os.Stat(path)
-
-	// if !os.IsNotExist(err) {
-	// 	return
-	// }
-
-	// if !badger.IsSyncMetadataExisted(path) {
-	// 	return
-	// }
 
 	// Update Sync Timestamp and hash as same as update Timestamp and hash
 	prevSyncMetadata := badger.GetSyncMetadata(path)
