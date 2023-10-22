@@ -4,6 +4,7 @@ import (
 	"crypto/sha1"
 	"log"
 	"os"
+	"reflect"
 	"time"
 
 	"github.com/quic-s/quics-client/pkg/db/badger"
@@ -175,6 +176,9 @@ func PSwhenRemove(path string) {
 
 	// Update Sync Timestamp and hash as same as update Timestamp and hash
 	prevSyncMetadata := badger.GetSyncMetadata(path)
+	if reflect.ValueOf(prevSyncMetadata).IsZero() {
+		return
+	}
 
 	syncMetadata := types.SyncMetadata{
 		BeforePath:          BeforePath,

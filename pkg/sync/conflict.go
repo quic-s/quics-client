@@ -20,7 +20,7 @@ const (
 func ConflictDownload(path string) error {
 	_, Afterpath := badger.SplitBeforeAfterRoot(path)
 
-	err := Conn.OpenTransaction("CONFLICTDOWNLOAD", func(stream *stream.Stream, transactionName string, transactionID []byte) error {
+	err := Conn.OpenTransaction(qstypes.CONFLICTDOWNLOAD, func(stream *stream.Stream, transactionName string, transactionID []byte) error {
 		UUID := badger.GetUUID()
 		res, err := qclient.SendConflictDownload(stream, UUID, Afterpath)
 		if err != nil {
@@ -97,7 +97,7 @@ func ChooseOne(path string, Side string) error {
 	UUID := badger.GetUUID()
 	_, AfterPath := badger.SplitBeforeAfterRoot(path)
 
-	err := Conn.OpenTransaction("CHOOSEONE", func(stream *stream.Stream, transactionName string, transactionID []byte) error {
+	err := Conn.OpenTransaction(qstypes.CHOOSEONE, func(stream *stream.Stream, transactionName string, transactionID []byte) error {
 
 		// Send ChooseOne
 		res, err := qclient.SendChooseOne(stream, UUID, AfterPath, Side)

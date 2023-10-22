@@ -29,10 +29,12 @@ func init() {
 	MustSyncMain()
 	ForceSyncMain()
 	FullScanMain()
+	NeedContentMain()
 
 }
 func InitQPClient() {
-	newClient, err := qp.New(qp.LOG_LEVEL_INFO)
+	//newClient, err := qp.New(qp.LOG_LEVEL_INFO)
+	newClient, err := qp.New(qp.LOG_LEVEL_ERROR)
 	if err != nil {
 		panic(err)
 	}

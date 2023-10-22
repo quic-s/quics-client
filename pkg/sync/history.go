@@ -14,7 +14,7 @@ func RollBack(path string, version uint64) error {
 
 	_, AfterPath := badger.SplitBeforeAfterRoot(path)
 
-	err := QPClient.RecvTransactionHandleFunc("ROLLBACK", func(conn *qp.Connection, stream *qp.Stream, transactionName string, transactionID []byte) error {
+	err := QPClient.RecvTransactionHandleFunc(qstypes.ROLLBACK, func(conn *qp.Connection, stream *qp.Stream, transactionName string, transactionID []byte) error {
 		rollbackres, err := qclient.SendRollBack(stream, badger.GetUUID(), AfterPath, version)
 		if err != nil {
 			return err
@@ -34,7 +34,7 @@ func RollBack(path string, version uint64) error {
 // @URL /api/v1/history/show
 func HistoryShow(path string, cntfromhead uint64) ([]qstypes.FileHistory, error) {
 	historyShowRes := []qstypes.FileHistory{}
-	err := QPClient.RecvTransactionHandleFunc("HISTORYSHOW", func(conn *qp.Connection, stream *qp.Stream, transactionName string, transactionID []byte) error {
+	err := QPClient.RecvTransactionHandleFunc(qstypes.HISTORYSHOW, func(conn *qp.Connection, stream *qp.Stream, transactionName string, transactionID []byte) error {
 		historyshowres, err := qclient.SendShowHistory(stream, badger.GetUUID(), path, cntfromhead)
 		if err != nil {
 			return err
@@ -54,7 +54,7 @@ func HistoryShow(path string, cntfromhead uint64) ([]qstypes.FileHistory, error)
 // @URL /api/v1/history/download
 func HistoryDownload(path string, version uint64) error {
 
-	err := QPClient.RecvTransactionHandleFunc("HISTORYDOWNLOAD", func(conn *qp.Connection, stream *qp.Stream, transactionName string, transactionID []byte) error {
+	err := QPClient.RecvTransactionHandleFunc(qstypes.HISTORYDOWNLOAD, func(conn *qp.Connection, stream *qp.Stream, transactionName string, transactionID []byte) error {
 		historydownloadres, err := qclient.SendDownloadHistory(stream, badger.GetUUID(), path, version)
 		if err != nil {
 			return err

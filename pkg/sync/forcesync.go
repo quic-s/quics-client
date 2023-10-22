@@ -9,11 +9,12 @@ import (
 	"github.com/quic-s/quics-client/pkg/types"
 	qp "github.com/quic-s/quics-protocol"
 	"github.com/quic-s/quics-protocol/pkg/stream"
+	qstypes "github.com/quic-s/quics/pkg/types"
 )
 
 func ForceSyncMain() {
 
-	err := QPClient.RecvTransactionHandleFunc("FORCESYNC", func(conn *qp.Connection, stream *stream.Stream, transactionName string, transactionID []byte) error {
+	err := QPClient.RecvTransactionHandleFunc(qstypes.FORCESYNC, func(conn *qp.Connection, stream *stream.Stream, transactionName string, transactionID []byte) error {
 		log.Println("quics-client: [FORCESYNC] transaction start")
 		UUID := badger.GetUUID()
 

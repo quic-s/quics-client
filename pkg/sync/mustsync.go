@@ -12,12 +12,13 @@ import (
 
 	"github.com/quic-s/quics-client/pkg/types"
 	qp "github.com/quic-s/quics-protocol"
+	qstypes "github.com/quic-s/quics/pkg/types"
 )
 
 // TODO
 func NeedContentMain() {
 
-	err := QPClient.RecvTransactionHandleFunc("NEEDCONTENT", func(conn *qp.Connection, stream *qp.Stream, transactionName string, transactionID []byte) error {
+	err := QPClient.RecvTransactionHandleFunc(qstypes.NEEDCONTENT, func(conn *qp.Connection, stream *qp.Stream, transactionName string, transactionID []byte) error {
 		req, err := qclient.NeedContentRecvHandler(stream)
 		if err != nil {
 			return err
@@ -49,7 +50,7 @@ func NeedContentMain() {
 
 func MustSyncMain() {
 
-	err := QPClient.RecvTransactionHandleFunc("MUSTSYNC", func(conn *qp.Connection, stream *qp.Stream, transactionName string, transactionID []byte) error {
+	err := QPClient.RecvTransactionHandleFunc(qstypes.MUSTSYNC, func(conn *qp.Connection, stream *qp.Stream, transactionName string, transactionID []byte) error {
 		UUID := badger.GetUUID()
 		mustSyncReq, err := qclient.MustSyncRecvHandler(stream)
 		if err != nil {

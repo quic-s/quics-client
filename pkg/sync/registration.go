@@ -15,9 +15,9 @@ import (
 
 	"github.com/quic-s/quics-client/pkg/db/badger"
 	"github.com/quic-s/quics-client/pkg/net/qclient"
-	"github.com/quic-s/quics-client/pkg/utils"
 	"github.com/quic-s/quics-client/pkg/viper"
 	qp "github.com/quic-s/quics-protocol"
+	"github.com/quic-s/quics-protocol/pkg/stream"
 	qstypes "github.com/quic-s/quics/pkg/types"
 )
 
@@ -55,11 +55,28 @@ func ClientRegistration(ClientPassword string, SIP string, SPort string) error {
 	return nil
 }
 
+func CheckInternetConnection() bool {
+	err := Conn.OpenTransaction("PING", func(stream *stream.Stream, transactionName string, transactionID []byte) error {
+		res, err := qclient.SendPing(stream, badger.GetUUID())
+		if err != nil {
+			return err
+		}
+		if reflect.ValueOf(res).IsZero() {
+			return fmt.Errorf("ping do not success")
+		}
+		return nil
+	})
+	if err != nil {
+		return false
+	}
+	return true
+}
+
 func Reconnect() {
 	prevStatus := true
 	for {
 
-		isOnline := utils.CheckInternetConnection()
+		isOnline := CheckInternetConnection()
 		if !prevStatus && isOnline {
 			ip := viper.GetViperEnvVariables("QUICS_SERVER_IP")
 			if ip == "" {

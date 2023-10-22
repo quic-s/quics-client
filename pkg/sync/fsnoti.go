@@ -24,7 +24,7 @@ func DirWatchStart() {
 				// lock mutex by hash value of file path
 				// using hash value is to reduce the number of mutex
 
-				if event.Op&fsnotify.Remove == fsnotify.Remove {
+				if event.Op&fsnotify.Remove == fsnotify.Remove || event.Op&fsnotify.Rename == fsnotify.Rename {
 					log.Println("quics-client : REMOVE event ")
 					go PleaseSync(path)
 					continue
