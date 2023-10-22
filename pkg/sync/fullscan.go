@@ -65,14 +65,14 @@ func FullScanMain() {
 
 					// OS : O, SyncMetadata : X
 					if item := ChangeTrueInComparelistIfExisted(comparelist, path); item == nil {
-						go PSwhenCreate(path)
+						go PleaseSync(path)
 						return nil
 
 					} else {
 						// OS : O, SyncMetadata : O
 						hashtocompare := utils.MakeHash(item.Sync.AfterPath, info)
 						if item.Sync.LastUpdateHash != hashtocompare {
-							go PSwhenWrite(path)
+							go PleaseSync(path)
 							return nil
 						} else {
 							// OS : O, SyncMetadata : O, hash is same -> MS
