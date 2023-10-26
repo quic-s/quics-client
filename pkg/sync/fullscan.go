@@ -65,8 +65,17 @@ func FullScanMain() {
 
 					// OS : O, SyncMetadata : X
 					if item := ChangeTrueInComparelistIfExisted(comparelist, path); item == nil {
-
 						go PleaseSync(path)
+
+						// TODO: Consider making hash of file is needed
+						resultList = append(resultList, qstypes.SyncMetadata{
+							BeforePath:          "",
+							AfterPath:           path,
+							LastUpdateHash:      utils.MakeHash(path, info),
+							LastUpdateTimestamp: 1,
+							LastSyncHash:        "",
+							LastSyncTimestamp:   0,
+						})
 						return nil
 
 					} else {
@@ -74,20 +83,18 @@ func FullScanMain() {
 						hashtocompare := utils.MakeHash(item.Sync.AfterPath, info)
 						if item.Sync.LastUpdateHash != hashtocompare {
 							go PleaseSync(path)
-							return nil
-						} else {
-							// OS : O, SyncMetadata : O, hash is same -> MS
-							convertedItem := qstypes.SyncMetadata{
-								BeforePath:          item.Sync.BeforePath,
-								AfterPath:           item.Sync.AfterPath,
-								LastUpdateHash:      item.Sync.LastUpdateHash,
-								LastUpdateTimestamp: item.Sync.LastUpdateTimestamp,
-								LastSyncTimestamp:   item.Sync.LastSyncTimestamp,
-								LastSyncHash:        item.Sync.LastSyncHash,
-							}
-							resultList = append(resultList, convertedItem)
-							return nil
 						}
+						// OS : O, SyncMetadata : O, hash is same -> MS
+						convertedItem := qstypes.SyncMetadata{
+							BeforePath:          item.Sync.BeforePath,
+							AfterPath:           item.Sync.AfterPath,
+							LastUpdateHash:      item.Sync.LastUpdateHash,
+							LastUpdateTimestamp: item.Sync.LastUpdateTimestamp,
+							LastSyncTimestamp:   item.Sync.LastSyncTimestamp,
+							LastSyncHash:        item.Sync.LastSyncHash,
+						}
+						resultList = append(resultList, convertedItem)
+						return nil
 
 					}
 				}
@@ -100,7 +107,16 @@ func FullScanMain() {
 		}
 		// OS : X, SyncMetadata : O
 		for _, item := range GetComparelistIfNotExisted(comparelist) {
-			go PSwhenRemove(item.Path)
+			go PleaseSync(item.Path)
+			convertedItem := qstypes.SyncMetadata{
+				BeforePath:          item.Sync.BeforePath,
+				AfterPath:           item.Sync.AfterPath,
+				LastUpdateHash:      item.Sync.LastUpdateHash,
+				LastUpdateTimestamp: item.Sync.LastUpdateTimestamp,
+				LastSyncTimestamp:   item.Sync.LastSyncTimestamp,
+				LastSyncHash:        item.Sync.LastSyncHash,
+			}
+			resultList = append(resultList, convertedItem)
 		}
 
 		// return askAllMetaHandler
