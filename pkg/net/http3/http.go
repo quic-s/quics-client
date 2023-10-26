@@ -2,6 +2,7 @@ package http3
 
 import (
 	"crypto/tls"
+	"fmt"
 	"log"
 	"path/filepath"
 
@@ -16,9 +17,9 @@ import (
 
 func RestServerStart(port string) {
 
-	log.Println("\t-----------------------------------------\n")
-	log.Println("\t 			quics-client start           \n")
-	log.Println("\t-----------------------------------------\n")
+	fmt.Println("\t-----------------------------------------\n")
+	fmt.Println("\t           quics-client start\n")
+	fmt.Println("\t-----------------------------------------\n")
 
 	log.Println("quics-client : starting port " + viper.GetViperEnvVariables("REST_SERVER_PORT"))
 	badger.OpenDB()

@@ -73,11 +73,11 @@ func CheckInternetConnection() bool {
 }
 
 func Reconnect() {
-	prevStatus := true
+	//prevStatus := true
 	for {
 
 		isOnline := CheckInternetConnection()
-		if !prevStatus && isOnline {
+		if !isOnline {
 			ip := viper.GetViperEnvVariables("QUICS_SERVER_IP")
 			if ip == "" {
 				continue
@@ -93,10 +93,11 @@ func Reconnect() {
 			err := ClientRegistration(ClientPW, ip, port)
 			if err != nil {
 				log.Println(err)
+
 			}
 
 		}
-		prevStatus = isOnline
+		//prevStatus = isOnline
 		time.Sleep(5 * time.Second)
 	}
 }

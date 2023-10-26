@@ -29,7 +29,7 @@ func CopyFile(src string, dst string) error {
 
 	if fileInfo.IsDir() {
 		err := os.MkdirAll(dst, fileInfo.Mode())
-		if err != nil {
+		if err != nil && !os.IsExist(err) {
 			log.Println("quics: ", err)
 			return err
 		}
@@ -67,7 +67,7 @@ func CopyFile(src string, dst string) error {
 			dir, _ := filepath.Split(dst)
 			if dir != "" {
 				err := os.MkdirAll(dir, 0700)
-				if err != nil {
+				if err != nil && !os.IsExist(err) {
 					return err
 				}
 			}

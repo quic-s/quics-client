@@ -20,8 +20,8 @@ func CreateDirIfNotExisted() {
 
 	if os.IsNotExist(err) {
 		err = os.Mkdir(quicsDir, 0755)
-		if err != nil {
-			log.Fatal(err)
+		if err != nil && !os.IsExist(err) {
+			log.Println(err)
 		}
 		log.Println("Created quics folder:", quicsDir)
 	} else {
@@ -47,8 +47,8 @@ func GetQuicsTempDirPath() string {
 	_, err := os.Stat(tempDirPath)
 	if os.IsNotExist(err) {
 		err = os.Mkdir(tempDirPath, 0755)
-		if err != nil {
-			log.Fatal(err)
+		if err != nil && !os.IsExist(err) {
+			log.Println(err)
 		}
 	}
 	return tempDirPath

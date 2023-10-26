@@ -21,6 +21,15 @@ func init() {
 
 	InitQPClient()
 
+}
+func InitQPClient() {
+	//newClient, err := qp.New(qp.LOG_LEVEL_INFO)
+	newClient, err := qp.New(qp.LOG_LEVEL_ERROR)
+	if err != nil {
+		panic(err)
+	}
+	QPClient = newClient
+
 	PSMut = make(map[byte]*sync.Mutex)
 	for i := uint8(0); i < PSMutModNum; i++ {
 		PSMut[i] = &sync.Mutex{}
@@ -30,15 +39,6 @@ func init() {
 	ForceSyncMain()
 	FullScanMain()
 	NeedContentMain()
-
-}
-func InitQPClient() {
-	//newClient, err := qp.New(qp.LOG_LEVEL_INFO)
-	newClient, err := qp.New(qp.LOG_LEVEL_ERROR)
-	if err != nil {
-		panic(err)
-	}
-	QPClient = newClient
 }
 func InitWatcher() {
 	// Create a new watcher.

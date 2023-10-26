@@ -65,6 +65,7 @@ func FullScanMain() {
 
 					// OS : O, SyncMetadata : X
 					if item := ChangeTrueInComparelistIfExisted(comparelist, path); item == nil {
+
 						go PleaseSync(path)
 						return nil
 

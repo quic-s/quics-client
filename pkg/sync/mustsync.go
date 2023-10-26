@@ -15,7 +15,6 @@ import (
 	qstypes "github.com/quic-s/quics/pkg/types"
 )
 
-// TODO
 func NeedContentMain() {
 
 	err := QPClient.RecvTransactionHandleFunc(qstypes.NEEDCONTENT, func(conn *qp.Connection, stream *qp.Stream, transactionName string, transactionID []byte) error {
