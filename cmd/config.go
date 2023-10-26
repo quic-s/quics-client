@@ -3,8 +3,8 @@ package main
 import (
 	"log"
 
+	"github.com/quic-s/quics-client/pkg/sync"
 	"github.com/quic-s/quics-client/pkg/utils"
-	"github.com/quic-s/quics-client/pkg/viper"
 	"github.com/spf13/cobra"
 )
 
@@ -28,12 +28,13 @@ func init() {
 	configCmd.AddCommand(ReadConfig())
 
 	rootCmd.AddCommand(configCmd)
+
 }
 
 func ConfigCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "config",
-		Short: "only read and rewrite config of quics client, **can not delete config**",
+		Short: "only read and rewrite config of [quics client], **can not delete config**",
 	}
 }
 
@@ -42,13 +43,8 @@ func ChangeServerConfig() *cobra.Command {
 		Use:   "server",
 		Short: "change server config",
 		Run: func(cmd *cobra.Command, args []string) {
-			viper.WriteViperEnvVariables("QUICS_SERVER_HOST", SIp)
-			if SIp != "" {
-				viper.WriteViperEnvVariables("QUICS_SERVER_HOST", SIp)
-			}
-			if SPort != "" {
-				viper.WriteViperEnvVariables("QUICS_SERVER_PORT", SPort)
-			}
+			result := sync.ConfigServer(SIp, SPort)
+			log.Println("quics-client : [Config] : ", result)
 		},
 	}
 }
@@ -58,7 +54,13 @@ func ReadConfig() *cobra.Command {
 		Use:   "show",
 		Short: "show configs of quics client",
 		Run: func(cmd *cobra.Command, args []string) {
-			log.Println(utils.ReadEnvFile())
+			raw := utils.ReadEnvFile()
+			result := "quics-client : [Show Config] : \n"
+
+			for _, item := range raw {
+				result += item + "/n"
+			}
+			log.Println(result)
 		},
 	}
 }

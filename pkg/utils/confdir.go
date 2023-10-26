@@ -82,7 +82,7 @@ func GetEmptyFilePath() string {
 	return emptyFilePath
 }
 
-func ReadEnvFile() map[string]string {
+func ReadEnvFile() []string {
 	envPath := filepath.Join(GetQuicsDirPath(), "qic.env")
 	file, err := os.Open(envPath)
 	if err != nil {
@@ -100,19 +100,20 @@ func ReadEnvFile() map[string]string {
 	dataStr := string(data)
 	lines := strings.Split(dataStr, "\n")
 
+	return lines
 	// 줄마다 키와 값으로 분리하고 리스트에 추가
-	kvMap := make(map[string]string)
-	for _, line := range lines {
-		// 줄이 비어있으면 건너뛰기
-		if line == "" {
-			continue
-		}
-		parts := strings.Split(line, "=")
-		key := parts[0]
-		value := strings.Join(parts[1:], " ")
-		kvMap[key] = value
-	}
+	// kvMap := make(map[string]string)
+	// for _, line := range lines {
+	// 	// 줄이 비어있으면 건너뛰기
+	// 	if line == "" {
+	// 		continue
+	// 	}
+	// 	parts := strings.Split(line, "=")
+	// 	key := parts[0]
+	// 	value := strings.Join(parts[1:], " ")
+	// 	kvMap[key] = value
+	// }
 
-	//log.Println(kvMap)
-	return kvMap
+	// //log.Println(kvMap)
+	// return kvMap
 }

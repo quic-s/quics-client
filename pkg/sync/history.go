@@ -1,6 +1,7 @@
 package sync
 
 import (
+	"log"
 	"reflect"
 
 	"github.com/quic-s/quics-client/pkg/db/badger"
@@ -14,7 +15,7 @@ func RollBack(path string, version uint64) error {
 
 	_, AfterPath := badger.SplitBeforeAfterRoot(path)
 
-	err := QPClient.RecvTransactionHandleFunc(qstypes.ROLLBACK, func(conn *qp.Connection, stream *qp.Stream, transactionName string, transactionID []byte) error {
+	err := Conn.OpenTransaction(qstypes.ROLLBACK, func(stream *qp.Stream, transactionName string, transactionID []byte) error {
 		rollbackres, err := qclient.SendRollBack(stream, badger.GetUUID(), AfterPath, version)
 		if err != nil {
 			return err
@@ -34,14 +35,17 @@ func RollBack(path string, version uint64) error {
 // @URL /api/v1/history/show
 func HistoryShow(path string, cntfromhead uint64) ([]qstypes.FileHistory, error) {
 	historyShowRes := []qstypes.FileHistory{}
-	err := QPClient.RecvTransactionHandleFunc(qstypes.HISTORYSHOW, func(conn *qp.Connection, stream *qp.Stream, transactionName string, transactionID []byte) error {
-		historyshowres, err := qclient.SendShowHistory(stream, badger.GetUUID(), path, cntfromhead)
+	_, AfterPath := badger.SplitBeforeAfterRoot(path)
+	err := Conn.OpenTransaction(qstypes.HISTORYSHOW, func(stream *qp.Stream, transactionName string, transactionID []byte) error {
+		historyshowres, err := qclient.SendShowHistory(stream, badger.GetUUID(), AfterPath, cntfromhead)
 		if err != nil {
 			return err
 		}
 		if reflect.ValueOf(historyshowres).IsZero() {
+			log.Println("dont have history")
 			return nil
 		}
+
 		historyShowRes = historyshowres.History
 		return nil
 	})
@@ -53,9 +57,10 @@ func HistoryShow(path string, cntfromhead uint64) ([]qstypes.FileHistory, error)
 
 // @URL /api/v1/history/download
 func HistoryDownload(path string, version uint64) error {
+	_, AfterPath := badger.SplitBeforeAfterRoot(path)
 
-	err := QPClient.RecvTransactionHandleFunc(qstypes.HISTORYDOWNLOAD, func(conn *qp.Connection, stream *qp.Stream, transactionName string, transactionID []byte) error {
-		historydownloadres, err := qclient.SendDownloadHistory(stream, badger.GetUUID(), path, version)
+	err := Conn.OpenTransaction(qstypes.HISTORYDOWNLOAD, func(stream *qp.Stream, transactionName string, transactionID []byte) error {
+		historydownloadres, err := qclient.SendDownloadHistory(stream, badger.GetUUID(), AfterPath, version)
 		if err != nil {
 			return err
 		}

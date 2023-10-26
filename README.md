@@ -62,8 +62,6 @@ For make sync in real time, the Sync Metadata is saved in the local db, the **Ba
 | Tag | Command | Options |     Description     | HTTP Method | Endpoint |
 | --- | --- | --- | --- | --- | --- |
 |controller	| `qic start`| `--hPort`| start client |    |	|
-|controller	| `qic reboot`| | reboot client |    |	|
-|controller	| `qic shutdown`| | shutdown client |    |	|
 |controller	| `qic --help`| | show help |    |	|
 |config	| `qic config show`| | read .qis.env |    |	|
 |config	| `qic config server`|` --host {serverIp} --port  {port}`| set main server config |    |	|

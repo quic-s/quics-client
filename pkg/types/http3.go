@@ -28,6 +28,11 @@ type DisconnectClientHTTP3 struct {
 	ClientPw string `json:"clientPw"`
 }
 
+type ConfigServerHTTP3 struct {
+	Host string `json:"host"`
+	Port string `json:"port"`
+}
+
 type ShowStatusHTTP3 struct {
 	Filepath string `json:"filepath"`
 }

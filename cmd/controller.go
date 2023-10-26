@@ -7,7 +7,6 @@ import (
 
 	"github.com/quic-s/quics-client/pkg/net/http3"
 
-	"github.com/quic-s/quics-client/pkg/viper"
 	"github.com/spf13/cobra"
 )
 
@@ -43,10 +42,7 @@ func StartCmd() *cobra.Command {
 		Use:   "start",
 		Short: "start Quics Client Server ",
 		Run: func(cmd *cobra.Command, args []string) {
-			if MyPort != "" {
-				viper.WriteViperEnvVariables("REST_SERVER_PORT", MyPort)
-			}
-			http3.RestServerStart()
+			http3.RestServerStart(MyPort)
 
 		},
 	}
@@ -58,6 +54,7 @@ func RebootCmd() *cobra.Command {
 		Use:   "reboot",
 		Short: "reboot the server",
 		Run: func(cmd *cobra.Command, args []string) {
+			// TODO
 			restClient := NewRestClient()
 			bres := restClient.GetRequest("/api/v1/reboot")
 			log.Println(bres.String())
@@ -72,6 +69,7 @@ func ShutdownCmd() *cobra.Command {
 		Use:   "shutdown",
 		Short: "shutdown the server",
 		Run: func(cmd *cobra.Command, args []string) {
+			// TODO
 			fmt.Println("Bye")
 			os.Exit(0)
 		},

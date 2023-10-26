@@ -8,6 +8,7 @@ import (
 	"github.com/quic-s/quics-client/pkg/db/badger"
 	"github.com/quic-s/quics-client/pkg/net/qclient"
 	"github.com/quic-s/quics-protocol/pkg/stream"
+	qstypes "github.com/quic-s/quics/pkg/types"
 )
 
 // @URL /api/v1/share/file
@@ -16,7 +17,7 @@ func GetShareLink(path string, MaxCnt uint64) (string, error) {
 	_, AfterPath := badger.SplitBeforeAfterRoot(path)
 	link := ""
 
-	err := Conn.OpenTransaction("SHARE", func(stream *stream.Stream, transactionName string, transactionID []byte) error {
+	err := Conn.OpenTransaction(qstypes.STARTSHARING, func(stream *stream.Stream, transactionName string, transactionID []byte) error {
 
 		linkShareRes, err := qclient.SendLinkShare(stream, UUID, AfterPath, MaxCnt)
 		if err != nil {
@@ -39,7 +40,7 @@ func GetShareLink(path string, MaxCnt uint64) (string, error) {
 // @URL /api/v1/share/stop
 func StopShare(link string) error {
 
-	err := Conn.OpenTransaction("SHARESTOP", func(stream *stream.Stream, transactionName string, transactionID []byte) error {
+	err := Conn.OpenTransaction(qstypes.STOPSHARING, func(stream *stream.Stream, transactionName string, transactionID []byte) error {
 		stopShareRes, err := qclient.SendStopShare(stream, badger.GetUUID(), link)
 		if err != nil {
 			return err
@@ -51,7 +52,7 @@ func StopShare(link string) error {
 		return nil
 	})
 	if err != nil {
-		return err
+		return fmt.Errorf("quics-client : ", err)
 	}
 
 	return nil

@@ -65,7 +65,8 @@ func FileCmd() *cobra.Command {
 			if err != nil {
 				log.Fatal(err)
 			}
-			log.Println(restClient.PostRequest("/api/v1/share/file", "application/json", breq))
+			bres := restClient.PostRequest("/api/v1/share/file", "application/json", breq)
+			log.Println(bres.String())
 		},
 	}
 }

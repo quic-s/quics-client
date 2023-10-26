@@ -45,7 +45,7 @@ func init() {
 	ConnectServerCmd.Flags().StringVarP(&SIp, HostCommand, HostShortCommand, "", "server domain/Ip for make connection")
 	ConnectServerCmd.Flags().StringVarP(&SPort, PortCommand, PortShortCommand, "", "server Port for make connection")
 	ConnectServerCmd.Flags().StringVarP(&ClientPW, PasswordCommand, PasswordShortCommand, "", "password for entering server")
-	if err := ConnectServerCmd.MarkFlagRequired(HostCommand); err != nil {
+	if err := ConnectServerCmd.MarkFlagRequired(PasswordCommand); err != nil {
 		log.Println(err)
 	}
 
@@ -99,9 +99,6 @@ func ConnectServerCmd() *cobra.Command {
 		Use:   "server",
 		Short: "connect to server",
 		Run: func(cmd *cobra.Command, args []string) {
-			log.Println("host:", SIp)
-			log.Println("port:", SPort)
-			log.Println("password:", ClientPW)
 			registerClient := &types.RegisterClientHTTP3{
 				Host:     SIp,
 				Port:     SPort,

@@ -14,7 +14,7 @@ import (
 	"github.com/quic-s/quics-client/pkg/viper"
 )
 
-func RestServerStart() {
+func RestServerStart(port string) {
 
 	log.Println("\t-----------------------------------------\n")
 	log.Println("\t 			quics-client start           \n")
@@ -35,11 +35,15 @@ func RestServerStart() {
 
 	handler := SetupHandler()
 	qconf := quic.Config{}
+
+	if port == "" {
+		port = viper.GetViperEnvVariables("REST_SERVER_PORT")
+	}
+
 	server := http3.Server{
 		Handler:    handler,
 		QuicConfig: &qconf,
-
-		Addr: "0.0.0.0:" + viper.GetViperEnvVariables("REST_SERVER_PORT"),
+		Addr:       "0.0.0.0:" + port,
 	}
 
 	quicsDir := utils.GetQuicsDirPath()

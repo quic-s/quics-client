@@ -8,6 +8,7 @@ import (
 	"github.com/quic-s/quics-client/pkg/app"
 	"github.com/quic-s/quics-client/pkg/sync"
 	"github.com/quic-s/quics-client/pkg/types"
+	"github.com/quic-s/quics-client/pkg/viper"
 )
 
 func SetupHandler() http.Handler {
@@ -26,7 +27,15 @@ func SetupHandler() http.Handler {
 			if err != nil {
 				w.Write([]byte("quics-client : [/api/v1/connect/server] ERROR : " + err.Error()))
 			}
-			err = sync.ClientRegistration(body.ClientPW, body.Host, body.Port)
+			host := body.Host
+			if host == "" {
+				host = viper.GetViperEnvVariables("QUICS_SERVER_HOST")
+			}
+			port := body.Port
+			if port == "" {
+				port = viper.GetViperEnvVariables("QUICS_SERVER_PORT")
+			}
+			err = sync.ClientRegistration(body.ClientPW, host, port)
 			if err != nil {
 				w.Write([]byte("quics-client : [/api/v1/connect/server] ERROR : " + err.Error()))
 			} else {
@@ -98,6 +107,43 @@ func SetupHandler() http.Handler {
 
 	// 		connection.UnRegisterRootDirRequest(body.RootDir, body.RootDirPw)
 	// 		connection.DirWatchStop(body.RootDir)
+	// 	}
+	// })
+
+	// mux.HandleFunc("/api/v1/config/server", func(w http.ResponseWriter, r *http.Request) {
+	// 	switch r.Method {
+	// 	case "POST":
+	// 		body := &types.ConfigServerHTTP3{}
+	// 		err := types.UnmarshalJSONFromRequest(r, body)
+	// 		if err != nil {
+	// 			log.Println("quics-client : cannot unmarshal")
+	// 			log.Println(err)
+	// 		}
+	// 		host := body.Host
+	// 		if host == "" {
+	// 			host = viper.GetViperEnvVariables("QUICS_SERVER_HOST")
+	// 		}
+	// 		port := body.Port
+	// 		if port == "" {
+	// 			port = viper.GetViperEnvVariables("QUICS_SERVER_PORT")
+	// 		}
+	// 		result := sync.ConfigServer(host, port)
+	// 		w.Write([]byte("quics-client : [/api/v1/config/server] RESP" + result))
+
+	// 	}
+	// })
+
+	// mux.HandleFunc("/api/v1/config/show", func(w http.ResponseWriter, r *http.Request) {
+	// 	switch r.Method {
+	// 	case "GET":
+	// 		raw := utils.ReadEnvFile()
+	// 		result := "quics-client : [/api/v1/config/show] RESP : \n"
+
+	// 		for _, item := range raw {
+	// 			result += item + "/n"
+	// 		}
+
+	// 		w.Write([]byte(result))
 	// 	}
 	// })
 
@@ -216,7 +262,7 @@ func SetupHandler() http.Handler {
 		}
 	})
 
-	mux.HandleFunc("/api/vi/share/file", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/api/v1/share/file", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case "POST":
 			body := &types.ShareFileHTTP3{}
@@ -256,13 +302,18 @@ func SetupHandler() http.Handler {
 			if err != nil {
 				w.Write([]byte("quics-client : [/api/v1/history/show] ERROR : " + err.Error()))
 			}
+
 			historyList, err := sync.HistoryShow(body.FilePath, body.CntFromHead)
 			if err != nil {
 				w.Write([]byte("quics-client : [/api/v1/history/show] ERROR : " + err.Error()))
 			}
 			result := ""
 			for i, history := range historyList {
-				result += fmt.Sprintf("%d. %s\n", i, history)
+				result += fmt.Sprintf("%d. %s\n", i, history.AfterPath)
+				result += fmt.Sprintf("\tDate      : %s\n", history.Date)
+				result += fmt.Sprintf("\tUUID      : %s\n", history.UUID)
+				result += fmt.Sprintf("\tTimestamp : %d\n", history.Timestamp)
+				result += fmt.Sprintf("\tHash      : %s\n\n", history.Hash)
 			}
 			w.Write([]byte("quics-client : [/api/v1/history/show] RESP : " + result))
 		}
