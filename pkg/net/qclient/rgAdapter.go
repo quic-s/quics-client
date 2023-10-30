@@ -78,3 +78,56 @@ func SendRootDirRegister(stream *qp.Stream, UUID string, RootDirPassword string,
 	return res, nil
 
 }
+func SendDisconnectRootDir(stream *qp.Stream, UUID string, AfterPath string) (qstypes.DisconnectRootDirRes, error) {
+	breq := qstypes.DisconnectRootDirReq{
+		UUID:      UUID,
+		AfterPath: AfterPath,
+	}
+
+	req, err := breq.Encode()
+	if err != nil {
+		return qstypes.DisconnectRootDirRes{}, err
+	}
+
+	err = stream.SendBMessage(req)
+	if err != nil {
+
+		return qstypes.DisconnectRootDirRes{}, err
+	}
+
+	bres, err := stream.RecvBMessage()
+	if err != nil {
+
+		return qstypes.DisconnectRootDirRes{}, err
+	}
+
+	res := qstypes.DisconnectRootDirRes{}
+	res.Decode(bres)
+
+	return res, nil
+
+}
+
+func SendDisconnectClient(stream *qp.Stream, UUID string) (qstypes.DisconnectClientRes, error) {
+	breq := qstypes.DisconnectClientReq{
+		UUID: UUID,
+	}
+
+	req, err := breq.Encode()
+	if err != nil {
+		return qstypes.DisconnectClientRes{}, err
+	}
+	err = stream.SendBMessage(req)
+	if err != nil {
+		return qstypes.DisconnectClientRes{}, err
+	}
+
+	bres, err := stream.RecvBMessage()
+	if err != nil {
+		return qstypes.DisconnectClientRes{}, err
+	}
+
+	res := qstypes.DisconnectClientRes{}
+	res.Decode(bres)
+	return res, nil
+}

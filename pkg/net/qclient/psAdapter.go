@@ -37,7 +37,7 @@ func SendPleaseSync(stream *qp.Stream, UUID string, Event string, AfterPath stri
 }
 
 func SendPleaseTake(stream *qp.Stream, UUID string, AfterPath string, path string) (*qstypes.PleaseTakeRes, error) {
-
+	res := qstypes.PleaseTakeRes{}
 	breq := qstypes.PleaseTakeReq{
 		UUID:      UUID,
 		AfterPath: AfterPath,
@@ -46,17 +46,18 @@ func SendPleaseTake(stream *qp.Stream, UUID string, AfterPath string, path strin
 	if err != nil {
 		return nil, err
 	}
+
 	err = stream.SendFileBMessage(req, path)
 	if err != nil {
-
 		return nil, err
 	}
+
 	data, err := stream.RecvBMessage()
 	if err != nil {
 
 		return nil, err
 	}
-	res := qstypes.PleaseTakeRes{}
+
 	res.Decode(data)
 	return &res, nil
 

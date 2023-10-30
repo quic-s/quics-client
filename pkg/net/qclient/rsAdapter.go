@@ -1,6 +1,8 @@
 package qclient
 
 import (
+	"log"
+
 	qp "github.com/quic-s/quics-protocol"
 	qstypes "github.com/quic-s/quics/pkg/types"
 )
@@ -18,11 +20,13 @@ func SendPing(stream *qp.Stream, UUID string) (*qstypes.Ping, error) {
 
 	err = stream.SendBMessage(breq)
 	if err != nil {
+		log.Println("error occurred when send msg ; ", err)
 		return nil, err
 	}
 
 	bres, err := stream.RecvBMessage()
 	if err != nil {
+		log.Println("error occurred when recv msg ; ", err)
 		return nil, err
 	}
 

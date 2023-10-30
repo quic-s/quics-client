@@ -48,7 +48,7 @@ func ForceSyncMain() {
 		return nil
 	})
 	if err != nil {
-		log.Println("quics-client: ", err)
+		log.Println("quics-client: [FORCESYNC] ", err)
 	}
 
 }

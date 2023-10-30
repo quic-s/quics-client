@@ -8,7 +8,7 @@ import (
 	"github.com/quic-s/quics-protocol/pkg/stream"
 )
 
-// @URL /api/v1/rescan
+// @URL /api/v1/sync/rescan
 // ex) Rescan()
 func Rescan() error {
 

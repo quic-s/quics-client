@@ -20,13 +20,12 @@ type RegisterRootDirHTTP3 struct { //Local, Remote
 }
 
 type DisconnectRootDirHTTP3 struct {
-	RootDir   string `json:"rootDir"`
-	RootDirPw string `json:"rootDirPw"`
+	RootDir string `json:"rootDir"`
 }
 
-type DisconnectClientHTTP3 struct {
-	ClientPw string `json:"clientPw"`
-}
+// type DisconnectClientHTTP3 struct {
+// 	ClientPw string `json:"clientPw"`
+// }
 
 type ConfigServerHTTP3 struct {
 	Host string `json:"host"`

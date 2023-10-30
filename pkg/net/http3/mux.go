@@ -72,7 +72,6 @@ func SetupHandler() http.Handler {
 			if err != nil {
 				w.Write([]byte("quics-client : [/api/v1/connect/root/local] ERROR : " + err.Error()))
 			}
-			log.Println("send response")
 			w.Write([]byte("quics-client : [/api/v1/connect/root/local] RESP : OK"))
 
 		}
@@ -95,20 +94,22 @@ func SetupHandler() http.Handler {
 		}
 	})
 
-	// mux.HandleFunc("/api/v1/disconnect/root", func(w http.ResponseWriter, r *http.Request) {
-	// 	switch r.Method {
-	// 	case "POST":
-	// 		body := &types.DisconnectRootDirHTTP3{}
-	// 		err := types.UnmarshalJSONFromRequest(r, body)
-	// 		if err != nil {
-	// 			log.Println("quics-client : cannot unmarshal")
-	// 			log.Println(err)
-	// 		}
+	mux.HandleFunc("/api/v1/disconnect/root", func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case "POST":
+			body := &types.DisconnectRootDirHTTP3{}
+			err := types.UnmarshalJSONFromRequest(r, body)
+			if err != nil {
+				w.Write([]byte("quics-client : [/api/v1/disconnect/root] ERROR : " + err.Error()))
+			}
+			_, err = sync.DisconnectRootDir(body.RootDir)
+			if err != nil {
+				w.Write([]byte("quics-client : [/api/v1/disconnect/root] ERROR : " + err.Error()))
+			}
+			w.Write([]byte("quics-client : [/api/v1/disconnect/root] RESP : OK"))
 
-	// 		connection.UnRegisterRootDirRequest(body.RootDir, body.RootDirPw)
-	// 		connection.DirWatchStop(body.RootDir)
-	// 	}
-	// })
+		}
+	})
 
 	// mux.HandleFunc("/api/v1/config/server", func(w http.ResponseWriter, r *http.Request) {
 	// 	switch r.Method {
@@ -163,42 +164,45 @@ func SetupHandler() http.Handler {
 		}
 	})
 
-	// mux.HandleFunc("/api/v1/disconnect/server", func(w http.ResponseWriter, r *http.Request) {
-	// 	body := &types.DisconnectClientHTTP3{}
-	// 	err := types.UnmarshalJSONFromRequest(r, body)
-	// 	if err != nil {
-	// 		log.Println("quics-client : cannot unmarshal")
-	// 		log.Println(err)
-	// 	}
-	// 	connection.DisconnectClientRequest(body.ClientPw)
+	mux.HandleFunc("/api/v1/disconnect/server", func(w http.ResponseWriter, r *http.Request) {
+		// body := &types.DisconnectClientHTTP3{}
+		// err := types.UnmarshalJSONFromRequest(r, body)
+		// if err != nil {
 
-	// })
+		// }
+		err := sync.DisconnectClient()
+		if err != nil {
+			w.Write([]byte("quics-client : [/api/v1/disconnect/server] ERROR : " + err.Error()))
+		}
+		w.Write([]byte("quics-client : [/api/v1/disconnect/server] RESP : OK"))
 
-	mux.HandleFunc("/api/v1/rescan", func(w http.ResponseWriter, r *http.Request) {
+	})
+
+	mux.HandleFunc("/api/v1/sync/rescan", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case "GET":
 			err := sync.Rescan()
 			if err != nil {
-				w.Write([]byte("quics-client : [/api/v1/rescan] ERROR : " + err.Error()))
+				w.Write([]byte("quics-client : [/api/v1/sync/rescan] ERROR : " + err.Error()))
 			}
-			w.Write([]byte("quics-client : [/api/v1/rescan] RESP : OK"))
+			w.Write([]byte("quics-client : [/api/v1/sync/rescan] RESP : OK"))
 		}
 	})
 
-	mux.HandleFunc("/api/v1/status", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/api/v1/sync/status", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case "POST":
 			showStatus := &types.ShowStatusHTTP3{}
 			err := types.UnmarshalJSONFromRequest(r, showStatus)
 			if err != nil {
-				w.Write([]byte("quics-client : [/api/v1/status] ERROR : " + err.Error()))
+				w.Write([]byte("quics-client : [/api/v1/sync/status] ERROR : " + err.Error()))
 			}
 
 			result, err := sync.ShowStatus(showStatus.Filepath)
 			if err != nil {
-				w.Write([]byte("quics-client : [/api/v1/status] ERROR : " + err.Error()))
+				w.Write([]byte("quics-client : [/api/v1/sync/status] ERROR : " + err.Error()))
 			}
-			w.Write([]byte("quics-client : [/api/v1/status] RESP : " + result))
+			w.Write([]byte("quics-client : [/api/v1/sync/status] RESP : " + result))
 		}
 	})
 

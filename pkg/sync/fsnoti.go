@@ -25,7 +25,7 @@ func DirWatchStart() {
 				// using hash value is to reduce the number of mutex
 
 				if event.Op&fsnotify.Remove == fsnotify.Remove || event.Op&fsnotify.Rename == fsnotify.Rename {
-					log.Println("quics-client : REMOVE event ")
+					log.Println("quics-client : REMOVE event ", path)
 					go PleaseSync(path)
 					continue
 				}
@@ -42,13 +42,13 @@ func DirWatchStart() {
 				}
 
 				if event.Op&fsnotify.Create == fsnotify.Create && !info.IsDir() { // IsFile
-					log.Println("quics-client : CREATE event ")
+					log.Println("quics-client : CREATE event ", path)
 					go PleaseSync(path)
 					continue
 				}
 
 				if event.Op&fsnotify.Write == fsnotify.Write {
-					log.Println("quics-client : WRITE event ")
+					log.Println("quics-client : WRITE event ", path)
 					go PleaseSync(path)
 					continue
 				}
@@ -88,6 +88,7 @@ func DirWatchAdd(rootpath string) {
 func DirWatchStop(rootpath string) {
 	filepath.Walk(rootpath, func(path string, info os.FileInfo, err error) error {
 		if info.IsDir() {
+			log.Println("path >> ", path)
 			Watcher.Remove(path)
 		}
 		return nil

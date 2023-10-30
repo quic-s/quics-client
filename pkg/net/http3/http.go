@@ -57,6 +57,23 @@ func RestServerStart(port string) {
 		utils.CertFile()
 	}
 
+	// Check if server is already connected before
+	// if yes, then reconnect to server
+	if viper.GetViperEnvVariables("QUICS_SERVER_IP") != "" && viper.GetViperEnvVariables("QUICS_SERVER_PORT") != "" && viper.GetViperEnvVariables("QUICS_SERVER_PASSWORD") != "" {
+
+		log.Println("quics-client : [INIT] Try reconnecting to server")
+		go func() {
+			err := sync.ClientRegistration(viper.GetViperEnvVariables("QUICS_SERVER_PASSWORD"), viper.GetViperEnvVariables("QUICS_SERVER_IP"), viper.GetViperEnvVariables("QUICS_SERVER_PORT"))
+			if err != nil {
+				log.Println("quics-client : [INIT] Cannot reconnect to server. !! PLEASE MAKE CONNECTION FIRST !!")
+			} else {
+				log.Println("quics-client : [INIT] Reconnected to server. !! LET'S GET STARTED !!")
+			}
+
+		}()
+	}
+
+	// start to listen
 	err = server.ListenAndServeTLS(certDir, keyDir)
 	if err != nil {
 		log.Fatal("Client Server Error : ", err)

@@ -2,6 +2,7 @@ package sync
 
 import (
 	"crypto/sha1"
+	"fmt"
 	"log"
 	"os"
 	"reflect"
@@ -18,14 +19,26 @@ import (
 )
 
 func PleaseSync(path string) {
-	time.Sleep(50 * time.Millisecond)
+	prevInfo, _ := os.Stat(path)
+	prevSize := int64(0)
+	if prevInfo != nil {
+		prevSize = prevInfo.Size()
+	}
+	time.Sleep(100 * time.Millisecond)
+	//log.Println("quics-client : [PLEASESYNC] PleaseSync start", path)
 
 	h := sha1.New()
 	h.Write([]byte(path))
 	hash := h.Sum(nil)
 
 	PSMut[uint8(hash[0]%PSMutModNum)].Lock()
-	defer PSMut[uint8(hash[0]%PSMutModNum)].Unlock()
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Println("Recovered from panic:", r)
+		}
+		PSMut[uint8(hash[0]%PSMutModNum)].Unlock()
+
+	}()
 
 	fileInfo, err := os.Stat(path)
 	if os.IsNotExist(err) {
@@ -37,6 +50,10 @@ func PleaseSync(path string) {
 		return
 	}
 
+	if prevSize != fileInfo.Size() {
+		// when file is under writing
+		return
+	}
 	if fileInfo.IsDir() {
 		return
 	}
@@ -82,14 +99,14 @@ func PSwhenWrite(path string, info os.FileInfo, syncMetadata types.SyncMetadata)
 	badger.Update(path, syncMetadata.Encode())
 
 	// PleaseSync Transaction
-	Conn.OpenTransaction(qstypes.PLEASESYNC, func(stream *qp.Stream, transactionName string, transactionID []byte) error {
-		log.Println("quics-client : [PLEASESYNC] transaction start")
+	err := Conn.OpenTransaction(qstypes.PLEASESYNC, func(stream *qp.Stream, transactionName string, transactionID []byte) error {
+		log.Println("quics-client : [PLEASESYNC] write transaction start")
 
 		serverfilemeta := qstypes.FileMetadata{}
 		serverfilemeta.DecodeFromOSFileInfo(info)
 
 		// Send PleaseSync
-		_, err := qclient.SendPleaseSync(stream, UUID, event, AfterPath, syncMetadata.LastUpdateTimestamp, syncMetadata.LastUpdateHash, syncMetadata.LastSyncHash, serverfilemeta)
+		res, err := qclient.SendPleaseSync(stream, UUID, event, AfterPath, syncMetadata.LastUpdateTimestamp, syncMetadata.LastUpdateHash, syncMetadata.LastSyncHash, serverfilemeta)
 		if err != nil {
 			return err
 		}
@@ -105,15 +122,22 @@ func PSwhenWrite(path string, info os.FileInfo, syncMetadata types.SyncMetadata)
 		}
 		badger.Update(path, syncMetadata.Encode())
 
-		// Send FileData
-		_, err = qclient.SendPleaseTake(stream, UUID, AfterPath, path)
-		if err != nil {
-			return err
+		if res.Status == "GIVEME" {
+			// Send FileData
+			_, err = qclient.SendPleaseTake(stream, UUID, AfterPath, path)
+			if err != nil {
+				return err
+			}
+		} else {
+			return fmt.Errorf("file already exited in server")
 		}
 
-		log.Println("quics-client : [PLEASESYNC] transaction success")
 		return nil
 	})
+	if err != nil {
+		log.Println("quics-client : [PLEASESYNC] write transaction failed :", err)
+	}
+	log.Println("quics-client : [PLEASESYNC] write transaction success")
 }
 
 func PSwhenCreate(path string, info os.FileInfo) {
@@ -131,19 +155,22 @@ func PSwhenCreate(path string, info os.FileInfo) {
 		LastSyncHash:        "",
 	}
 	badger.Update(path, syncMetadata.Encode())
-	Conn.OpenTransaction(qstypes.PLEASESYNC, func(stream *stream.Stream, transactionName string, transactionID []byte) error {
+	err := Conn.OpenTransaction(qstypes.PLEASESYNC, func(stream *stream.Stream, transactionName string, transactionID []byte) error {
 
-		log.Println("quics-client : [PLEASESYNC] transaction start")
+		log.Println("quics-client : [PLEASESYNC] create transaction start")
 
 		// Send PleaseSync
 
 		serverfilemeta := qstypes.FileMetadata{}
+
 		serverfilemeta.DecodeFromOSFileInfo(info)
 		// Send PleaseSync
-		_, err := qclient.SendPleaseSync(stream, UUID, event, AfterPath, syncMetadata.LastUpdateTimestamp, syncMetadata.LastUpdateHash, syncMetadata.LastSyncHash, serverfilemeta)
+
+		res, err := qclient.SendPleaseSync(stream, UUID, event, AfterPath, syncMetadata.LastUpdateTimestamp, syncMetadata.LastUpdateHash, syncMetadata.LastSyncHash, serverfilemeta)
 		if err != nil {
 			return err
 		}
+
 		// Update Sync Timestamp and hash as same as update Timestamp and hash
 		syncMetadata = types.SyncMetadata{
 			BeforePath:          BeforePath,
@@ -156,15 +183,23 @@ func PSwhenCreate(path string, info os.FileInfo) {
 		badger.Update(path, syncMetadata.Encode())
 
 		// Send FileData
-		_, err = qclient.SendPleaseTake(stream, UUID, AfterPath, path)
-		if err != nil {
-			return err
+		if res.Status == "GIVEME" {
+			// Send FileData
+			_, err = qclient.SendPleaseTake(stream, UUID, AfterPath, path)
+			if err != nil {
+				return err
+			}
+		} else {
+			return fmt.Errorf("file already exited in server")
 		}
 
-		log.Println("quics-client : [PLEASESYNC] transaction success")
 		return nil
 
 	})
+	if err != nil {
+		log.Println("quics-client : [PLEASESYNC] create transaction failed", err)
+	}
+	log.Println("quics-client : [PLEASESYNC] create transaction success")
 }
 
 func PSwhenRemove(path string) {
@@ -172,7 +207,6 @@ func PSwhenRemove(path string) {
 	BeforePath, AfterPath := badger.SplitBeforeAfterRoot(path)
 	UUID := badger.GetUUID()
 	event := "REMOVE"
-	_, err := os.Stat(path)
 
 	// Update Sync Timestamp and hash as same as update Timestamp and hash
 	prevSyncMetadata := badger.GetSyncMetadata(path)
@@ -190,9 +224,9 @@ func PSwhenRemove(path string) {
 	}
 	badger.Update(path, syncMetadata.Encode())
 
-	err = Conn.OpenTransaction(qstypes.PLEASESYNC, func(stream *stream.Stream, transactionName string, transactionID []byte) error {
+	err := Conn.OpenTransaction(qstypes.PLEASESYNC, func(stream *stream.Stream, transactionName string, transactionID []byte) error {
 
-		log.Println("quics-client : [PLEASESYNC] transaction start")
+		log.Println("quics-client : [PLEASESYNC] remove transaction start")
 
 		// Send PleaseSync
 
@@ -201,26 +235,29 @@ func PSwhenRemove(path string) {
 		}
 
 		// Send PleaseSync
-		_, err := qclient.SendPleaseSync(stream, UUID, event, AfterPath, syncMetadata.LastUpdateTimestamp, syncMetadata.LastUpdateHash, syncMetadata.LastSyncHash, serverfilemeta)
+		res, err := qclient.SendPleaseSync(stream, UUID, event, AfterPath, syncMetadata.LastUpdateTimestamp, syncMetadata.LastUpdateHash, syncMetadata.LastSyncHash, serverfilemeta)
 		if err != nil {
 			return err
 		}
-
-		// Send FileData
-		_, err = qclient.SendPleaseTake(stream, UUID, AfterPath, utils.GetEmptyFilePath())
-		if err != nil {
-			return err
-		}
-
 		// Delete SyncMetadata when event is REMOVE
 		badger.Delete(path)
+		// Send FileData
+		if res.Status == "GIVEME" {
 
-		log.Println("quics-client : [PLEASESYNC] transaction success")
+			_, err = qclient.SendPleaseTake(stream, UUID, AfterPath, utils.GetEmptyFilePath())
+			if err != nil {
+				return err
+			}
+		} else {
+			return fmt.Errorf("file already exited in server")
+		}
+
+		log.Println("quics-client : [PLEASESYNC] remove transaction success")
 		return nil
 
 	})
 	if err != nil {
-		log.Println("quics-client : [PLEASESYNC] >> Remove >>", err)
+		log.Println("quics-client : [PLEASESYNC] remove transaction failed", err)
 	}
 
 }

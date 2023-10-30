@@ -1,1 +1,0 @@
-# quics-client `/pkg` directory

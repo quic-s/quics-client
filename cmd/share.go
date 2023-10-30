@@ -65,7 +65,12 @@ func FileCmd() *cobra.Command {
 			if err != nil {
 				log.Fatal(err)
 			}
-			bres := restClient.PostRequest("/api/v1/share/file", "application/json", breq)
+
+			// Request to REST Server
+			bres, err := restClient.PostRequest("/api/v1/share/file", "application/json", breq)
+			if err != nil {
+				log.Println(err)
+			}
 			log.Println(bres.String())
 		},
 	}
@@ -85,9 +90,14 @@ func StopCmd() *cobra.Command {
 			}
 			breq, err := json.Marshal(chosenFilePath)
 			if err != nil {
-				log.Fatal(err)
+				log.Println(err)
 			}
-			log.Println(restClient.PostRequest("/api/v1/share/stop", "application/json", breq))
+			// Request to REST Server
+			bres, err := restClient.PostRequest("/api/v1/share/stop", "application/json", breq)
+			if err != nil {
+				log.Println(err)
+			}
+			log.Println(bres.String())
 		},
 	}
 }

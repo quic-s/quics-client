@@ -61,20 +61,25 @@ For make sync in real time, the Sync Metadata is saved in the local db, the **Ba
 
 | Tag | Command | Options |     Description     | HTTP Method | Endpoint |
 | --- | --- | --- | --- | --- | --- |
-|controller	| `qic start`| `--hPort`| start client |    |	|
-|controller	| `qic --help`| | show help |    |	|
-|config	| `qic config show`| | read .qis.env |    |	|
-|config	| `qic config server`|` --host {serverIp} --port  {port}`| set main server config |    |	|
-|config	| `qic config root`|` --abspath {dirpath}  --name {dir-NN}`| set root dir config |    |	|
-|config	| `qic config delete`|` --key {key}`| delete root dir config |    |	|
-|connect	| `qic connect server`|` --password {password} --host {serverIp} --port {port}`| connect to server | POST | `/api/v1/connect/server` |
-|disconnect	| `qic disconnect server`|` --password {ClientPassword}`| disconnect to server | POST | `/api/v1/disconnect/server`|
-|disconnect	| `qic disconnect root`|` --root {root dir/NN} --password {pw}`| disconnect to root dir | POST | `/api/v1/disconnect/root`|
-|connect	| `qic connect root`|` --local  {root-dir/NN} -- password {pw}`| connect to local root dir | POST | `/api/v1/connect/root/local`|
-|connect	| `qic connect root`|` --remote {root dir/NN} --password {pw}`| connect to remote root dir | POST | `/api/v1/connect/root/remote`|
-|connect	| `qic connect list-remote`| | get rootdir list | GET | `/api/v1/connect/list/remote`|
-|sync	| `qic sync status`|` --pick {root dir/NN}`| get root dir status | POST | `/api/v1/status/root/`|
-|sync	| `qic sync rescan`| | ask server to rescan all root dir | POST | `/api/v1/rescan`|
+| controller | qic start | --hport  | start the program | X |  |
+| controller | qic --help |  | show the help message | X |  |
+| config | qic config show |  | read .qis.env | GET | /api/v1/config/show |
+| config | qic config server --host {serverIp} --port {port} |  | main server config | POST | /api/v1/config/server |
+| connect | qic connect server | --host {severIp} --port {port} --password {clientPassword}  | connect to the server | POST | /api/v1/connect/server |
+| connect | qic connect root |--local {root abs path} --password {rootPassword} |   connect to the local root directory | POST | /api/v1/connect/root/local |
+| connect | qic connect root |--remote {root abs path} --password {rootPassword} |   connect to the remote root directory | POST | /api/v1/connect/root/remote |
+| connect | qic connect list-remote |  | get the list of remote root directory | GET | /api/v1/connect/list/remote |
+| disconnect | qic disconnect root | --path {root abs path}  | disconnect to the root directory | POST | /api/v1/disconnect/root |
+| sync | qic sync status | --path {file abs path} | get the status of the root directory | POST | /api/v1/sync/status |
+| sync | qic sync rescan |  | rescan the all of root directory | POST | /api/v1/sync/rescan |
+| conflict | qic conflict list |   | get the list of the root directory | GET | /api/v1/conflict/list |
+| conflict | qic conflict choose | --path {file abs path} --candidate {uuid} | choose the file of the root directory | POST | /api/v1/conflict/choose |
+| conflict | qic conflict download | --path {file abs path} | download the file of the root directory | POST | /api/v1/conflict/download |
+| sharing | qic share file | --path {file abs path} --cnt {download count} | share the file of the root directory | POST | /api/v1/share/download |
+| sharing | qic share stop | --link {download link} | stop the sharing of the file | POST | /api/v1/share/stop |
+| history | qic history rollback | --path {file abs path} --version {version} | rollback the file to certain version | POST | /api/v1/history/rollback |
+| history | qic history show | --path {file abs path} --from-head {version} | show the history of the file | POST | /api/v1/history/show |
+| history | qic history download | --path {file abs path} --version {version} | download the file of the root directory | POST | /api/v1/history/download |
 
 
 

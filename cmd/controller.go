@@ -54,9 +54,12 @@ func RebootCmd() *cobra.Command {
 		Use:   "reboot",
 		Short: "reboot the server",
 		Run: func(cmd *cobra.Command, args []string) {
-			// TODO
+
 			restClient := NewRestClient()
-			bres := restClient.GetRequest("/api/v1/reboot")
+			bres, err := restClient.GetRequest("/api/v1/reboot")
+			if err != nil {
+				log.Println(err)
+			}
 			log.Println(bres.String())
 
 		},

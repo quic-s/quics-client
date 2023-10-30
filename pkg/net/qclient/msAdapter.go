@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/quic-s/quics-client/pkg/utils"
 	qp "github.com/quic-s/quics-protocol"
@@ -73,12 +74,34 @@ func GiveYouRecvHandler(stream *qp.Stream, path string, afterPath string, hash s
 	// if file is removed, then remove file
 	if Isremoved {
 		err = os.Remove(filepath.Join(tempDir, afterPath))
-		if err != nil {
+		if err != nil && !os.IsNotExist(err) {
 			return nil, err
 		}
 		err = os.Remove(path)
-		if err != nil {
+		if err != nil && !os.IsNotExist(err) {
 			return nil, err
+		}
+
+		// If Case in Dir is empty
+		for dirPath, _ := filepath.Split(path); dirPath[:len(dirPath)-1] != filepath.Join(path[:len(path)-len(afterPath)], strings.Split(afterPath, "/")[1]); dirPath, _ = filepath.Split(dirPath[:len(dirPath)-1]) {
+
+			dir, err := os.Open(dirPath)
+			if err != nil && !os.IsNotExist(err) {
+				log.Println("quics err: ", err)
+				return nil, err
+			} else if os.IsNotExist(err) {
+				continue
+			}
+
+			// Delete directory when it is empty
+			files, err := dir.Readdir(-1)
+			if err != nil {
+				return nil, err
+			}
+			if len(files) == 0 {
+				os.Remove(dirPath)
+			}
+			dir.Close()
 		}
 		log.Println("quics-client: ", "file removed")
 		return nil, nil
@@ -98,7 +121,7 @@ func GiveYouRecvHandler(stream *qp.Stream, path string, afterPath string, hash s
 	}
 
 	err = os.Remove(filepath.Join(tempDir, afterPath))
-	if err != nil {
+	if err != nil && !os.IsNotExist(err) {
 		return nil, err
 	}
 
@@ -138,7 +161,7 @@ func NeedContentRecvHandler(stream *qp.Stream) (*qstypes.NeedContentReq, error) 
 
 }
 
-func NeedContentHandler(stream *qp.Stream, UUID string, AfterPath string, LastUpdateTimestamp uint64, LastUpdateHash string) error {
+func NeedContentHandler(stream *qp.Stream, path string, UUID string, AfterPath string, LastUpdateTimestamp uint64, LastUpdateHash string) error {
 
 	bres := qstypes.NeedContentRes{
 		UUID:                UUID,
@@ -152,7 +175,7 @@ func NeedContentHandler(stream *qp.Stream, UUID string, AfterPath string, LastUp
 		return err
 	}
 
-	err = stream.SendFileBMessage(res, AfterPath)
+	err = stream.SendFileBMessage(res, path)
 	if err != nil {
 		return err
 	}

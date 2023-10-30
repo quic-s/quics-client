@@ -18,17 +18,16 @@ const (
 	ConnectRemoteCommand      = "remote"
 	ConnectRemoteShortCommand = "r"
 
-	DisconnectRootCommand      = "root"
-	DisconnectRootShortCommand = "r"
+	DisconnectRootCommand      = "path"
+	DisconnectRootShortCommand = "p"
 )
 
 var (
-	SIp                 string
-	SPort               string
-	UUID                string
-	ClientPW            string
-	DisConnectClientPW  string
-	DisConnectRootDirPw string
+	SIp                string
+	SPort              string
+	UUID               string
+	ClientPW           string
+	DisConnectClientPW string
 
 	LocalRootDir      string
 	RemoteRootDir     string
@@ -74,13 +73,10 @@ func init() {
 
 	DisconnectRootCmd := DisconnectRootCmd()
 	DisconnectRootCmd.Flags().StringVarP(&DisconnectRootDir, DisconnectRootCommand, DisconnectRootShortCommand, "", "choose witch root be disable ")
-	DisconnectRootCmd.Flags().StringVarP(&DisConnectRootDirPw, PasswordCommand, PasswordShortCommand, "", "password for disconnect root")
 	if err := DisconnectRootCmd.MarkFlagRequired(DisconnectRootCommand); err != nil {
 		log.Println(err)
 	}
-	if err := DisconnectRootCmd.MarkFlagRequired(PasswordCommand); err != nil {
-		log.Println(err)
-	}
+
 	DisconnectCmd.AddCommand(DisconnectRootCmd)
 	rootCmd.AddCommand(DisconnectCmd)
 
@@ -110,8 +106,15 @@ func ConnectServerCmd() *cobra.Command {
 				log.Println(err)
 			}
 			restClient := NewRestClient()
-			restClient.PostRequest("/api/v1/connect/server", "application/json", body)
-			restClient.Close()
+			defer restClient.Close()
+
+			// Request to REST Server
+			bres, err := restClient.PostRequest("/api/v1/connect/server", "application/json", body)
+			if err != nil {
+				log.Println(err)
+			}
+			log.Println(bres.String())
+
 		},
 	}
 
@@ -139,7 +142,11 @@ func ConnectRootCmd() *cobra.Command {
 					log.Println(err)
 				}
 
-				restClient.PostRequest("/api/v1/connect/root/local", "application/json", body)
+				bres, err := restClient.PostRequest("/api/v1/connect/root/local", "application/json", body)
+				if err != nil {
+					log.Println(err)
+				}
+				log.Println(bres.String())
 
 			}
 			if RemoteRootDir != "" && LocalRootDir == "" { // romote to local
@@ -152,7 +159,11 @@ func ConnectRootCmd() *cobra.Command {
 				if err != nil {
 					log.Println(err)
 				}
-				restClient.PostRequest("/api/v1/connect/root/remote", "application/json", body)
+				bres, err := restClient.PostRequest("/api/v1/connect/root/remote", "application/json", body)
+				if err != nil {
+					log.Println(err)
+				}
+				log.Println(bres.String())
 
 			}
 			restClient.Close()
@@ -169,7 +180,13 @@ func ShowRemoteRootListCmd() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 
 			restClient := NewRestClient()
-			log.Println(restClient.GetRequest("/api/v1/connect/list/remote"))
+			defer restClient.Close()
+			// Request to REST Server
+			bres, err := restClient.GetRequest("/api/v1/connect/list/remote")
+			if err != nil {
+				log.Fatal(err)
+			}
+			log.Println(bres.String())
 		},
 	}
 }
@@ -187,35 +204,47 @@ func DisconnectServerCmd() *cobra.Command {
 		Short: "disconnect server",
 		Run: func(cmd *cobra.Command, args []string) {
 			restClient := NewRestClient()
-			disconnectClientHTTP3 := &types.RegisterClientHTTP3{
-				ClientPW: DisConnectClientPW,
-			}
-			body, err := json.Marshal(disconnectClientHTTP3)
+			defer restClient.Close()
+			// disconnectClientHTTP3 := &types.RegisterClientHTTP3{
+			// 	ClientPW: DisConnectClientPW,
+			// }
+			// body, err := json.Marshal(disconnectClientHTTP3)
+			// if err != nil {
+			// 	log.Fatal(err)
+			// }
+			// Request to REST Server
+			bres, err := restClient.PostRequest("/api/v1/disconnect/server", "application/json", nil)
 			if err != nil {
 				log.Println(err)
 			}
-			restClient.PostRequest("/api/v1/disconnect/server", "application/json", body)
+			log.Println(bres.String())
 
 		},
 	}
 }
 
+// qic disconnect root --path
 func DisconnectRootCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "root",
-		Short: "disconnect root",
+		Short: "choose which root to disconnect",
 		Run: func(cmd *cobra.Command, args []string) {
 
 			restClient := NewRestClient()
+			defer restClient.Close()
 			disconnectRootHTTP3 := &types.RegisterRootDirHTTP3{
-				RootDir:   DisconnectRootDir,
-				RootDirPw: DisConnectRootDirPw,
+				RootDir: DisconnectRootDir,
 			}
 			body, err := json.Marshal(disconnectRootHTTP3)
 			if err != nil {
+				log.Fatal(err)
+			}
+			// Request to REST Server
+			bres, err := restClient.PostRequest("/api/v1/disconnect/root", "application/json", body)
+			if err != nil {
 				log.Println(err)
 			}
-			restClient.PostRequest("/api/v1/disconnect/root", "application/json", body)
+			log.Println(bres.String())
 		},
 	}
 }

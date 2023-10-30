@@ -42,8 +42,15 @@ func RescanCmd() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 
 			restClient := NewRestClient()
-			log.Println(restClient.GetRequest("/api/v1/rescan"))
-			restClient.Close()
+			defer restClient.Close()
+
+			// Request to REST Server
+			bres, err := restClient.GetRequest("/api/v1/sync/rescan")
+			if err != nil {
+				log.Println(err)
+			}
+			log.Println(bres.String())
+
 		},
 	}
 }
@@ -56,6 +63,7 @@ func StatusCmd() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 
 			restClient := NewRestClient()
+			defer restClient.Close()
 			showStatusHTTP3 := &types.ShowStatusHTTP3{
 				Filepath: DirForStatus,
 			}
@@ -64,8 +72,13 @@ func StatusCmd() *cobra.Command {
 				log.Println(err)
 			}
 
-			log.Println(restClient.PostRequest("/api/v1/status", "application/json", body))
-			restClient.Close()
+			// Request to REST Server
+			bres, err := restClient.PostRequest("/api/v1/sync/status", "application/json", body)
+			if err != nil {
+				log.Println(err)
+			}
+			log.Println(bres.String())
+
 		},
 	}
 }

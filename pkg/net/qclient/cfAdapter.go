@@ -1,6 +1,7 @@
 package qclient
 
 import (
+	"log"
 	"path/filepath"
 
 	"github.com/quic-s/quics-client/pkg/utils"
@@ -103,6 +104,7 @@ func SendConflictDownload(stream *qp.Stream, UUID string, AfterPath string) ([]*
 		if err != nil {
 			continue
 		}
+		log.Println("Conflict files recieved >> ", name)
 		result = append(result, &res)
 	}
 	return result, nil

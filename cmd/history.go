@@ -88,7 +88,12 @@ func DownloadCmd() *cobra.Command {
 				log.Fatal(err)
 			}
 
-			log.Println(restClient.PostRequest("/api/v1/history/download", "application/json", breq))
+			// Request to REST Server
+			bres, err := restClient.PostRequest("/api/v1/history/download", "application/json", breq)
+			if err != nil {
+				log.Println(err)
+			}
+			log.Println(bres.String())
 
 		},
 	}
@@ -119,7 +124,12 @@ func ShowCmd() *cobra.Command {
 				log.Fatal(err)
 			}
 
-			log.Println(restClient.PostRequest("/api/v1/history/show", "application/json", breq))
+			//Request to REST Server
+			bres, err := restClient.PostRequest("/api/v1/history/show", "application/json", breq)
+			if err != nil {
+				log.Println(err)
+			}
+			log.Println(bres.String())
 
 		},
 	}
@@ -150,7 +160,12 @@ func RollBackCmd() *cobra.Command {
 				log.Fatal(err)
 			}
 
-			log.Println(restClient.PostRequest("/api/v1/history/rollback", "application/json", breq))
+			//Request to REST Server
+			bres, err := restClient.PostRequest("/api/v1/history/rollback", "application/json", breq)
+			if err != nil {
+				log.Println(err)
+			}
+			log.Println(bres.String())
 		},
 	}
 }

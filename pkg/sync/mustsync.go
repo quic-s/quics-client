@@ -16,7 +16,6 @@ import (
 )
 
 func NeedContentMain() {
-
 	err := QPClient.RecvTransactionHandleFunc(qstypes.NEEDCONTENT, func(conn *qp.Connection, stream *qp.Stream, transactionName string, transactionID []byte) error {
 		req, err := qclient.NeedContentRecvHandler(stream)
 		if err != nil {
@@ -33,7 +32,7 @@ func NeedContentMain() {
 		}
 
 		if syncMeta.LastUpdateTimestamp == req.LastUpdateTimestamp && syncMeta.LastUpdateHash == req.LastUpdateHash {
-			err := qclient.NeedContentHandler(stream, badger.GetUUID(), afterPath, syncMeta.LastUpdateTimestamp, syncMeta.LastUpdateHash)
+			err := qclient.NeedContentHandler(stream, path, badger.GetUUID(), afterPath, syncMeta.LastUpdateTimestamp, syncMeta.LastUpdateHash)
 			if err != nil {
 				return err
 			}
@@ -42,11 +41,12 @@ func NeedContentMain() {
 
 	})
 	if err != nil {
-		log.Println("[NEEDCONTENT] ", err)
+		log.Println("[quics-client : NEEDCONTENT] ", err)
 	}
 
 }
 
+// MustSyncMain is a function to handle MustSync transaction
 func MustSyncMain() {
 
 	err := QPClient.RecvTransactionHandleFunc(qstypes.MUSTSYNC, func(conn *qp.Connection, stream *qp.Stream, transactionName string, transactionID []byte) error {
@@ -68,34 +68,29 @@ func MustSyncMain() {
 		defer PSMut[uint8(hash[0]%PSMutModNum)].Unlock()
 
 		path := filepath.Join(beforePath, afterPath)
-		log.Println("before path >> ", beforePath)
-		log.Println("after path >> ", afterPath)
-		log.Println("path >> ", path)
 
 		//If New File in coming, then make new sync meta in badger
 		// e.g. new file created by other clients
-		if !badger.IsSyncMetadataExisted(path) {
-			syncMetadata := types.SyncMetadata{
-				BeforePath:          beforePath,
-				AfterPath:           afterPath,
-				LastUpdateTimestamp: 0,
-				LastUpdateHash:      "",
-				LastSyncTimestamp:   0,
-				LastSyncHash:        "",
-			}
-			err := badger.Update(path, syncMetadata.Encode())
-			if err != nil {
-				return err
-			}
-		}
+		// if !badger.IsSyncMetadataExisted(path) {
+		// 	syncMetadata := types.SyncMetadata{
+		// 		BeforePath:          beforePath,
+		// 		AfterPath:           afterPath,
+		// 		LastUpdateTimestamp: 0,
+		// 		LastUpdateHash:      "",
+		// 		LastSyncTimestamp:   0,
+		// 		LastSyncHash:        "",
+		// 	}
+		// 	err := badger.Update(path, syncMetadata.Encode())
+		// 	if err != nil {
+		// 		return err
+		// 	}
+		// }
 
 		syncMetadata := badger.GetSyncMetadata(path)
-		log.Println("syncMetadata >> ", syncMetadata)
 
 		if !CheckCanOverwrite(syncMetadata.LastSyncTimestamp, syncMetadata.LastUpdateTimestamp, mustSyncReq.LatestSyncTimestamp) {
 			err := qclient.MustSyncHandler(stream, UUID, "", 0, "")
 			if err != nil {
-				log.Println("can not response mustsync >> ")
 				return err
 			}
 			return fmt.Errorf("transaction fail, cannot overwrite")
@@ -108,8 +103,8 @@ func MustSyncMain() {
 		}
 
 		// Get File Contents
-
 		IsRemoved := false
+
 		// when "event remove" broadcasted, then do not save the file
 		if mustSyncReq.LatestHash == "" {
 			IsRemoved = true
@@ -119,20 +114,19 @@ func MustSyncMain() {
 			return err
 		}
 
-		//update syncmeta
-		updatedSyncMeta := types.SyncMetadata{
-			BeforePath:          beforePath,
-			AfterPath:           afterPath,
-			LastUpdateTimestamp: mustSyncReq.LatestSyncTimestamp,
-			LastUpdateHash:      mustSyncReq.LatestHash,
-			LastSyncTimestamp:   mustSyncReq.LatestSyncTimestamp,
-			LastSyncHash:        mustSyncReq.LatestHash,
-		}
-		badger.Update(path, updatedSyncMeta.Encode())
-
 		if IsRemoved {
 			badger.Delete(path)
-
+		} else {
+			//update syncmeta
+			updatedSyncMeta := types.SyncMetadata{
+				BeforePath:          beforePath,
+				AfterPath:           afterPath,
+				LastUpdateTimestamp: mustSyncReq.LatestSyncTimestamp,
+				LastUpdateHash:      mustSyncReq.LatestHash,
+				LastSyncTimestamp:   mustSyncReq.LatestSyncTimestamp,
+				LastSyncHash:        mustSyncReq.LatestHash,
+			}
+			badger.Update(path, updatedSyncMeta.Encode())
 		}
 
 		err = qclient.GiveYouHandler(stream, UUID, afterPath, mustSyncReq.LatestSyncTimestamp, mustSyncReq.LatestHash)
@@ -143,10 +137,12 @@ func MustSyncMain() {
 		return nil
 	})
 	if err != nil {
-		log.Println("[MUSTSYNC] ", err)
+		log.Println("quics-client : [MUSTSYNC] ", err)
 	}
 
 }
+
+// CheckCanOverwrite checks whether the file can be overwritten
 func CheckCanOverwrite(LastSyncTimestamp uint64, LastUpdateTimestamp uint64, LastestSyncTimestamp uint64) bool {
 	if LastSyncTimestamp == LastUpdateTimestamp && LastestSyncTimestamp > LastSyncTimestamp {
 		return true

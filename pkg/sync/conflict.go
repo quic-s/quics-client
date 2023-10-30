@@ -2,6 +2,7 @@ package sync
 
 import (
 	"fmt"
+	"log"
 	"path/filepath"
 	"reflect"
 
@@ -21,6 +22,7 @@ func ConflictDownload(path string) error {
 	_, Afterpath := badger.SplitBeforeAfterRoot(path)
 
 	err := Conn.OpenTransaction(qstypes.CONFLICTDOWNLOAD, func(stream *stream.Stream, transactionName string, transactionID []byte) error {
+		log.Println("quics-client : [CONFLICTDOWNLOAD] transaction start")
 		UUID := badger.GetUUID()
 		res, err := qclient.SendConflictDownload(stream, UUID, Afterpath)
 		if err != nil {
@@ -35,34 +37,31 @@ func ConflictDownload(path string) error {
 	if err != nil {
 		return err
 	}
+	log.Println("quics-client : [CONFLICTDOWNLOAD] transaction success")
 	return nil
 
 }
 
 // @URL /api/v1/conflict/list
-func GetConflictList() ([]*qstypes.Conflict, error) {
+func GetConflictList() ([]qstypes.Conflict, error) {
 
 	UUID := badger.GetUUID()
-	result := []*qstypes.Conflict{}
+	result := []qstypes.Conflict{}
 
 	err := Conn.OpenTransaction(qstypes.CONFLICTLIST, func(stream *stream.Stream, transactionName string, transactionID []byte) error {
+		log.Println("quics-client : [CONFLICTLIST] transaction start")
 		cflist, err := qclient.SendAskConflictList(stream, UUID)
 		if err != nil {
 			return err
 		}
-		// Create a new slice of pointers to qstypes.Conflict
-		conflicts := make([]*qstypes.Conflict, len(cflist.Conflicts))
-		// Copy the elements from cflist.Conflicts to the new slice
-		for i, c := range cflist.Conflicts {
-			conflicts[i] = &c
-		}
-		result = conflicts
+		result = cflist.Conflicts
 		return nil
 
 	})
 	if err != nil {
 		return nil, err
 	}
+	log.Println("quics-client : [CONFLICTLIST] transaction success")
 	return result, nil
 
 }
@@ -79,13 +78,15 @@ func PrintCFOptions() (string, error) {
 		afterPath := conflictFile.AfterPath
 		beforePath := badger.GetBeforePathWithAfterPath(afterPath)
 		result += fmt.Sprintf("%d. %s\n", i+1, filepath.Join(beforePath, afterPath))
+		y := 1
 		for UUID, candidate := range conflictFile.StagingFiles {
 			time, err := candidate.File.ModTime.MarshalText()
 			if err != nil {
 				return "", err
 			}
 
-			result += fmt.Sprintf("\t%s, Size > %d ModTime > %s\n", UUID, candidate.File.Size, time)
+			result += fmt.Sprintf("\t(%d) Candidate > %s \n\t\tSize > %d ModTime > %s\n", y, UUID, candidate.File.Size, time)
+			y++
 		}
 	}
 	return result, nil

@@ -55,7 +55,10 @@ func ShowConflictListCmd() *cobra.Command {
 		Short: "show conflict list",
 		Run: func(cmd *cobra.Command, args []string) {
 			restClient := NewRestClient()
-			bres := restClient.GetRequest("/api/v1/conflict/list")
+			bres, err := restClient.GetRequest("/api/v1/conflict/list")
+			if err != nil {
+				log.Println(err)
+			}
 			log.Println(bres.String())
 		},
 	}
@@ -78,7 +81,10 @@ func ChooseOneCmd() *cobra.Command {
 			if err != nil {
 				log.Println(err)
 			}
-			bres := restClient.PostRequest("/api/v1/conflict/choose", "application/json", body)
+			bres, err := restClient.PostRequest("/api/v1/conflict/choose", "application/json", body)
+			if err != nil {
+				log.Println(err)
+			}
 			log.Println(bres.String())
 
 		},
@@ -99,10 +105,13 @@ func CfDownloadCmd() *cobra.Command {
 			}
 			breq, err := json.Marshal(conflictDownloadReq)
 			if err != nil {
-				log.Fatal(err)
+				log.Println(err)
 			}
 
-			bres := restClient.PostRequest("/api/v1/history/download", "application/json", breq)
+			bres, err := restClient.PostRequest("/api/v1/conflict/download", "application/json", breq)
+			if err != nil {
+				log.Println(err)
+			}
 			log.Println(bres.String())
 
 		},

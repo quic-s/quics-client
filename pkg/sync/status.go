@@ -7,7 +7,7 @@ import (
 	"github.com/quic-s/quics-client/pkg/db/badger"
 )
 
-// @URL /api/v1/status
+// @URL /api/v1/sync/status
 // ex) ShowStatus("/home/rootDir/text.txt)"
 func ShowStatus(filepath string) (string, error) {
 	pathInfo, err := os.Stat(filepath)
