@@ -4,7 +4,6 @@ import (
 	"crypto/tls"
 	"fmt"
 	"log"
-	"net"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -23,17 +22,18 @@ import (
 
 var ClientPW string
 
+//var PingCnt = 0
+
 // @URL /api/v1/connect/server
 // ex. RegisterClientRequest("password", "S_IP", "S_PORT")
 func ClientRegistration(ClientPassword string, SIP string, SPort string) error {
-	ClientPW = ClientPassword
 	if SIP != "" {
 		viper.WriteViperEnvVariables("QUICS_SERVER_IP", SIP)
 	}
 	if SPort != "" {
 		viper.WriteViperEnvVariables("QUICS_SERVER_PORT", SPort)
 	}
-
+	ClientPW = ClientPassword
 	// Check UUID is existed
 	UUID := ""
 	if badger.GetUUID() != "" {
@@ -43,11 +43,15 @@ func ClientRegistration(ClientPassword string, SIP string, SPort string) error {
 		badger.Update("UUID", []byte(UUID))
 	}
 
+	InitQPClient()
+
 	var err error
 	Conn, err = ConnectServer(UUID)
 	if err != nil {
 		return err
 	}
+
+	viper.WriteViperEnvVariables("QUICS_SERVER_PASSWORD", ClientPassword)
 
 	go Rescan()
 	go Reconnect()
@@ -59,6 +63,7 @@ func CheckInternetConnection() bool {
 	err := Conn.OpenTransaction("PING", func(stream *stream.Stream, transactionName string, transactionID []byte) error {
 		res, err := qclient.SendPing(stream, badger.GetUUID())
 		if err != nil {
+			log.Println("error in transaction: ", err)
 			return err
 		}
 		if reflect.ValueOf(res).IsZero() {
@@ -67,37 +72,47 @@ func CheckInternetConnection() bool {
 		return nil
 	})
 	if err != nil {
+		log.Println("quics-client : [PING] ERROR ", err)
 		return false
 	}
+	//log.Println("PingCnt >> ", PingCnt)
+	//PingCnt++
 	return true
 }
 
 func Reconnect() {
-	//prevStatus := true
-	for {
 
+	for {
 		isOnline := CheckInternetConnection()
+		//if !isOnline || PingCnt == 80 {
 		if !isOnline {
+			//PingCnt = 0
 			ip := viper.GetViperEnvVariables("QUICS_SERVER_IP")
 			if ip == "" {
+				log.Println("quics-client : [RECONNECT] ERROR ", "server IP is not set")
 				continue
 			}
 
-			Conn.Close()
+			err := Conn.Close()
+			if err != nil {
+				log.Println("quics-client : [RECONNECT] ERROR ", err)
+			}
 			Conn = nil
-			QPClient.Close()
+			err = QPClient.Close()
+			if err != nil {
+				log.Println("quics-client : [RECONNECT] ERROR ", err)
+			}
 			QPClient = nil
-			InitQPClient()
 
 			port := viper.GetViperEnvVariables("QUICS_SERVER_PORT")
-			err := ClientRegistration(ClientPW, ip, port)
+			err = ClientRegistration(ClientPW, ip, port)
 			if err != nil {
 				log.Println(err)
-
+				continue
 			}
-
+			return
 		}
-		//prevStatus = isOnline
+
 		time.Sleep(5 * time.Second)
 	}
 }
@@ -114,9 +129,8 @@ func ConnectServer(uuid string) (*qp.Connection, error) {
 	}
 
 	NewConn, err := QPClient.DialWithTransaction(
-		&net.UDPAddr{
-			IP:   net.ParseIP(viper.GetViperEnvVariables("QUICS_SERVER_IP")),
-			Port: parsedPort},
+		viper.GetViperEnvVariables("QUICS_SERVER_IP"),
+		parsedPort,
 		tlsConf,
 		qstypes.REGISTERCLIENT,
 		func(stream *qp.Stream, transactionName string, transactionID []byte) error {
@@ -139,7 +153,6 @@ func ConnectServer(uuid string) (*qp.Connection, error) {
 // ex. RegistRootDir("/home/ubuntu/rootDir", "password")
 func RegistRootDir(LocalRootDir string, RootDirPW string, Side string) error {
 	dir, root := filepath.Split(LocalRootDir)
-	log.Println("[RegisterRootDir]")
 
 	//In Remote Register case
 	_, err := os.Stat(LocalRootDir)
@@ -216,60 +229,73 @@ func GetRemoteRootList() (qstypes.AskRootDirRes, error) {
 	return *rootList, nil
 }
 
-// // @URL /api/v1/disconnect/root
-// // ex. UnRegisterRootDirRequest("/home/ubuntu/rootDir", "password")
-// func UnRegisterRootDirRequest(DisconnectRootDir string, RootDirPW string) error {
+// @URL /api/v1/disconnect/server
+// ex. DisconnectClient()
+func DisconnectClient() error {
 
-// 	_, file := filepath.Split(DisconnectRootDir)
-// 	before, after := utils.SplitBeforeAfterRoot(DisconnectRootDir)
+	err := Conn.OpenTransaction("DISCONNECTCLIENT", func(stream *stream.Stream, transactionName string, transactionID []byte) error {
+		res, err := qclient.SendDisconnectClient(stream, badger.GetUUID())
+		if err != nil {
 
-// 	body := types.RegisterRootDirRequest{
-// 		UUID:            badger.GetUUID(),
-// 		RootDirPassword: RootDirPW,
-// 		BeforePath:      before,
-// 		AfterPath:       after,
-// 	}
-// 	response, err := Conn.SendMessageWithResponse("NOTROOTDIRANYMORE", body.Encode())
-// 	if err != nil {
-// 		return err
-// 	}
-// 	if string(response) == "OK" {
-// 		badger.DeleteRootDir(DisconnectRootDir)
-// 		return nil
-// 		//TODO make clear from fsnotify
+			return err
+		}
+		if reflect.ValueOf(res).IsZero() {
 
-// 	}
-// 	return fmt.Errorf("RegisterRootDir: %s", string(response))
-// }
+			return fmt.Errorf("[DISCONNECTCLIENT] still registerd")
+		}
 
-// // @URL /api/v1/disconnect/server
-// // ex. DisconnectClientRequest("password")
-// func DisconnectClientRequest(password string) {
-// 	NotClientAnymoreRequest := qstypes.NotClientAnymoreRequest{
-// 		UUID:           badger.GetUUID(),
-// 		ClientPassword: password,
-// 	}
-// 	resp, err := Conn.SendMessageWithResponse(NOTCLIENTANYMORE, NotClientAnymoreRequest.Encode())
-// 	if err != nil {
-// 		log.Println(err)
-// 	}
-// 	log.Println("quics-client :response : " + string(resp))
-// 	CloseConnect()
-// }
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+	viper.DeleteViperVariablesByKey("QUICS_SERVER_IP")
+	viper.DeleteViperVariablesByKey("QUICS_SERVER_PORT")
+	viper.DeleteViperVariablesByKey("QUICS_SERVER_PASSWORD")
 
-// // @URL /api/v1/disconnect/root
-// // ex. DisConnectClientRequest( "/home/ubuntu/rootDir", "password")
-// func DisconnectRootDirRequest(rootpath string, password string) {
-// 	_, after := utils.SplitBeforeAfterRoot(rootpath)
-// 	notRootDirAnymorRequest := types.NotRootDirAnymorRequest{
-// 		UUID:            badger.GetUUID(),
-// 		RootPath:        after, // /rootDir
-// 		RootDirPassword: password,
-// 	}
-// 	resp, err := Conn.SendMessageWithResponse(NOTROOTDIRANYMORE, notRootDirAnymorRequest.Encode())
-// 	if err != nil {
-// 		log.Println(err)
-// 	}
-// 	log.Println("quics-client :response : " + string(resp))
+	Conn.Close()
+	Conn = nil
+	QPClient.Close()
+	QPClient = nil
 
-// }
+	return nil
+}
+
+// @URL /api/v1/disconnect/root
+// ex. DisConnectRootDir( "/home/ubuntu/rootDir")
+func DisconnectRootDir(path string) (qstypes.DisconnectRootDirRes, error) {
+	_, after := badger.SplitBeforeAfterRoot(path)
+
+	result := qstypes.DisconnectRootDirRes{}
+	err := Conn.OpenTransaction(qstypes.DISCONNECTROOTDIR, func(stream *stream.Stream, transactionName string, transactionID []byte) error {
+
+		res, err := qclient.SendDisconnectRootDir(stream, badger.GetUUID(), after)
+		if err != nil {
+
+			return err
+		}
+		if reflect.ValueOf(res).IsZero() {
+			return fmt.Errorf("[DISCONNECTROOTDIR] still registerd")
+		}
+
+		result = res
+
+		DirWatchStop(path)
+		syncList, err := badger.GetAllSyncMetadataInRoot(path)
+		if err != nil {
+			log.Println(err)
+		}
+		for _, item := range syncList {
+			badger.Delete(filepath.Join(item.BeforePath, item.AfterPath))
+		}
+		badger.DeleteRootDir(path)
+		return nil
+
+	})
+	if err != nil {
+		log.Println("log")
+		return result, err
+	}
+	return result, nil
+
+}

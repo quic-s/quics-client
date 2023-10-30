@@ -19,7 +19,7 @@ var (
 
 func init() {
 
-	InitQPClient()
+	// InitQPClient()
 
 }
 func InitQPClient() {

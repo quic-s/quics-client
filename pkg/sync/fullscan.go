@@ -23,11 +23,11 @@ func FullScanMain() {
 			return err
 		}
 		if askAllMetaReq.UUID == "" {
-			return fmt.Errorf(" AskAllMetaRecvHandler : UUID is empty ")
+			return fmt.Errorf("UUID is empty")
 		}
 		UUID := badger.GetUUID()
 		if askAllMetaReq.UUID != UUID {
-			return fmt.Errorf(" AskAllMetaRecvHandler : UUID is not same ")
+			return fmt.Errorf("UUID is not same")
 		}
 
 		// make list to compare
@@ -66,12 +66,13 @@ func FullScanMain() {
 					// OS : O, SyncMetadata : X
 					if item := ChangeTrueInComparelistIfExisted(comparelist, path); item == nil {
 						go PleaseSync(path)
+						BeforePath, AfterPath := badger.SplitBeforeAfterRoot(path)
 
 						// TODO: Consider making hash of file is needed
 						resultList = append(resultList, qstypes.SyncMetadata{
-							BeforePath:          "",
-							AfterPath:           path,
-							LastUpdateHash:      utils.MakeHash(path, info),
+							BeforePath:          BeforePath,
+							AfterPath:           AfterPath,
+							LastUpdateHash:      utils.MakeHash(AfterPath, info),
 							LastUpdateTimestamp: 1,
 							LastSyncHash:        "",
 							LastSyncTimestamp:   0,
@@ -83,17 +84,29 @@ func FullScanMain() {
 						hashtocompare := utils.MakeHash(item.Sync.AfterPath, info)
 						if item.Sync.LastUpdateHash != hashtocompare {
 							go PleaseSync(path)
+							// OS : O, SyncMetadata : O, hash is not same -> MS
+							convertedItem := qstypes.SyncMetadata{
+								BeforePath:          item.Sync.BeforePath,
+								AfterPath:           item.Sync.AfterPath,
+								LastUpdateHash:      hashtocompare,
+								LastUpdateTimestamp: item.Sync.LastUpdateTimestamp + 1,
+								LastSyncTimestamp:   item.Sync.LastSyncTimestamp,
+								LastSyncHash:        item.Sync.LastSyncHash,
+							}
+							resultList = append(resultList, convertedItem)
+						} else {
+							// OS : O, SyncMetadata : O, hash is same -> MS
+							convertedItem := qstypes.SyncMetadata{
+								BeforePath:          item.Sync.BeforePath,
+								AfterPath:           item.Sync.AfterPath,
+								LastUpdateHash:      item.Sync.LastUpdateHash,
+								LastUpdateTimestamp: item.Sync.LastUpdateTimestamp,
+								LastSyncTimestamp:   item.Sync.LastSyncTimestamp,
+								LastSyncHash:        item.Sync.LastSyncHash,
+							}
+							resultList = append(resultList, convertedItem)
+
 						}
-						// OS : O, SyncMetadata : O, hash is same -> MS
-						convertedItem := qstypes.SyncMetadata{
-							BeforePath:          item.Sync.BeforePath,
-							AfterPath:           item.Sync.AfterPath,
-							LastUpdateHash:      item.Sync.LastUpdateHash,
-							LastUpdateTimestamp: item.Sync.LastUpdateTimestamp,
-							LastSyncTimestamp:   item.Sync.LastSyncTimestamp,
-							LastSyncHash:        item.Sync.LastSyncHash,
-						}
-						resultList = append(resultList, convertedItem)
 						return nil
 
 					}
@@ -106,6 +119,7 @@ func FullScanMain() {
 			}
 		}
 		// OS : X, SyncMetadata : O
+		// When Case in Remove
 		for _, item := range GetComparelistIfNotExisted(comparelist) {
 			go PleaseSync(item.Path)
 			convertedItem := qstypes.SyncMetadata{
@@ -128,10 +142,11 @@ func FullScanMain() {
 		return nil
 	})
 	if err != nil {
-		log.Println("[FULLSCAN]: ", err)
+		log.Println("quics-client : [FULLSCAN]: ", err)
 	}
 }
 
+// ChangeTrueInComparelistIfExisted changes IsExisted true if path is existed in comparelist
 func ChangeTrueInComparelistIfExisted(comparelist []*types.ComparingSyncMetadata, path string) *types.ComparingSyncMetadata {
 	for _, item := range comparelist {
 		if item.Path == path {
@@ -142,6 +157,7 @@ func ChangeTrueInComparelistIfExisted(comparelist []*types.ComparingSyncMetadata
 	return nil
 }
 
+// GetComparelistIfNotExisted returns list of SyncMetadata which is not existed in OS
 func GetComparelistIfNotExisted(comparelist []*types.ComparingSyncMetadata) []*types.ComparingSyncMetadata {
 	resultList := []*types.ComparingSyncMetadata{}
 	for _, item := range comparelist {
