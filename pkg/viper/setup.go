@@ -15,6 +15,9 @@ func InitViper() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	if tempDir == "/" {
+		tempDir = "/root"
+	}
 	tem := filepath.Join(tempDir, ".quics")
 	QicEnvPath = filepath.Join(tem, "qic.env")
 
