@@ -37,6 +37,9 @@ func GetQuicsDirPath() string {
 	if err != nil {
 		log.Fatal(err)
 	}
+	if tempDir == "/" {
+		tempDir = "/root"
+	}
 	return filepath.Join(tempDir, ".quics")
 }
 
@@ -60,6 +63,9 @@ func GetDownloadDirPath() string {
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
 		log.Fatal(err)
+	}
+	if homeDir == "/" {
+		homeDir = "/root"
 	}
 	// append "Downloads" subdirectory
 	downloadDir := filepath.Join(homeDir, "Downloads")

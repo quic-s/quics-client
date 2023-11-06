@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"log"
+	"net/http"
 	"path/filepath"
 
 	"github.com/quic-go/quic-go"
@@ -47,6 +48,12 @@ func RestServerStart(port string) {
 		Addr:       "0.0.0.0:" + port,
 	}
 
+	eport := viper.GetViperEnvVariables("REST_ENTRY_SERVER_PORT")
+	httpserver := http.Server{
+		Handler: handler,
+		Addr:    "0.0.0.0:" + eport,
+	}
+
 	quicsDir := utils.GetQuicsDirPath()
 	certDir := filepath.Join(quicsDir, viper.GetViperEnvVariables("QUICS_CLI_CERT_NAME"))
 	keyDir := filepath.Join(quicsDir, viper.GetViperEnvVariables("QUICS_CLI_KEY_NAME"))
@@ -72,6 +79,12 @@ func RestServerStart(port string) {
 
 		}()
 	}
+	go func() {
+		err := httpserver.ListenAndServeTLS(certDir, keyDir)
+		if err != nil {
+			log.Fatal("Client HTTP Server Error : ", err)
+		}
+	}()
 
 	// start to listen
 	err = server.ListenAndServeTLS(certDir, keyDir)

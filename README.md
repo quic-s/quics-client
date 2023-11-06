@@ -32,14 +32,14 @@ For make sync in real time, the Sync Metadata is saved in the local db, the **Ba
 ### 1. Docker
     
 ```
-    docker run -it --rm -v /path/to/your/dir:/data chromato99/quics-client
+docker run -it -d -e PASSWORD=passwordwhatyouwant -v /path/to/your/dir:/data --name quics -p 6120:6120 -p 6121:6121/udp -p 6122:6122/udp quics/quics
 ```
 
 ### 2. Local Install
 
 - 1. Download the latest release from the [releases page]()
 - 2. Unpack the archive.
-- 3. Run `./qic` in the unpacked directory.
+- 3. Run `mv ./qic /usr/local/bin/qic`
 
 
 
@@ -52,7 +52,7 @@ For make sync in real time, the Sync Metadata is saved in the local db, the **Ba
     ```
 - 3. Run the command in the root of the repository.
     ```
-    go build ./cmd
+    go build -o qic ./cmd
     ```
 
 
@@ -61,31 +61,38 @@ For make sync in real time, the Sync Metadata is saved in the local db, the **Ba
 
 | Tag | Command | Options |     Description     | HTTP Method | Endpoint |
 | --- | --- | --- | --- | --- | --- |
-| controller | qic start | --hport  | start the program | X |  |
-| controller | qic --help |  | show the help message | X |  |
-| config | qic config show |  | read .qis.env | GET | /api/v1/config/show |
-| config | qic config server --host {serverIp} --port {port} |  | main server config | POST | /api/v1/config/server |
-| connect | qic connect server | --host {severIp} --port {port} --password {clientPassword}  | connect to the server | POST | /api/v1/connect/server |
-| connect | qic connect root |--local {root abs path} --password {rootPassword} |   connect to the local root directory | POST | /api/v1/connect/root/local |
-| connect | qic connect root |--remote {root abs path} --password {rootPassword} |   connect to the remote root directory | POST | /api/v1/connect/root/remote |
-| connect | qic connect list-remote |  | get the list of remote root directory | GET | /api/v1/connect/list/remote |
-| disconnect | qic disconnect root | --path {root abs path}  | disconnect to the root directory | POST | /api/v1/disconnect/root |
-| sync | qic sync status | --path {file abs path} | get the status of the root directory | POST | /api/v1/sync/status |
-| sync | qic sync rescan |  | rescan the all of root directory | POST | /api/v1/sync/rescan |
-| conflict | qic conflict list |   | get the list of the root directory | GET | /api/v1/conflict/list |
-| conflict | qic conflict choose | --path {file abs path} --candidate {uuid} | choose the file of the root directory | POST | /api/v1/conflict/choose |
-| conflict | qic conflict download | --path {file abs path} | download the file of the root directory | POST | /api/v1/conflict/download |
-| sharing | qic share file | --path {file abs path} --cnt {download count} | share the file of the root directory | POST | /api/v1/share/download |
-| sharing | qic share stop | --link {download link} | stop the sharing of the file | POST | /api/v1/share/stop |
-| history | qic history rollback | --path {file abs path} --version {version} | rollback the file to certain version | POST | /api/v1/history/rollback |
-| history | qic history show | --path {file abs path} --from-head {version} | show the history of the file | POST | /api/v1/history/show |
-| history | qic history download | --path {file abs path} --version {version} | download the file of the root directory | POST | /api/v1/history/download |
+| controller | `qic start` | `--hport`  | start the program | X |  |
+| controller | `qic` | `--help` | show the help message | X |  |
+| config | `qic config show` |  | read .qis.env | GET | /api/v1/config/show |
+| config | `qic config server` | `--host` `--port`  | main server config | POST | /api/v1/config/server |
+| connect | `qic connect server` | `--host` `--port` `--password`  | connect to the server | POST | /api/v1/connect/server |
+| connect | `qic connect root` |`--local` `--password` |   connect to the local root directory | POST | /api/v1/connect/root/local |
+| connect | `qic connect root` | `--remote` `--password`  |   connect to the remote root directory | POST | /api/v1/connect/root/remote |
+| connect | `qic connect list-remote` |  | get the list of remote root directory | GET | /api/v1/connect/list/remote |
+| disconnect | `qic disconnect root` | `--path` | disconnect to the root directory | POST | /api/v1/disconnect/root |
+| sync | `qic sync status` | `--path` | get the status of the root directory | POST | /api/v1/sync/status |
+| sync | `qic sync rescan` |  | rescan the all of root directory | POST | /api/v1/sync/rescan |
+| conflict | `qic conflict list` |   | get the list of the root directory | GET | /api/v1/conflict/list |
+| conflict | `qic conflict choose` | `--path` `--candidate` | choose the file of the root directory | POST | /api/v1/conflict/choose |
+| conflict | `qic conflict download` | `--path` | download the file of the root directory | POST | /api/v1/conflict/download |
+| sharing | `qic share file` | `--path` `--cnt` | share the file of the root directory | POST | /api/v1/share/download |
+| sharing | `qic share stop` | `--link` | stop the sharing of the file | POST | /api/v1/share/stop |
+| history | `qic history rollback` | `--path` `--version`  | rollback the file to certain version | POST | /api/v1/history/rollback |
+| history | qic` history show` | `--path` `--from-head` | show the history of the file | POST | /api/v1/history/show |
+| history | `qic history download` | `--path`  `--version` | download the file of the root directory | POST | /api/v1/history/download |
 
 
 
 ## Contribute
+QUIC-S is an open source project, and contributions of any kind are welcome and appreciated.
 
+We also have a awesome plan to make QUIC-S better. Check [ROADMAP.md](https://github.com/quic-s/quics/blob/main/ROADMAP.md) will be helpful to understand our project's direction.
+
+To contribute, please read [CONTRIBUTING.md](https://github.com/quic-s/quics/blob/main/CONTRIBUTING.md)
 - To report bugs or request features, please use the issue tracker. Before you do so, make sure you are running the latest version, and please do a quick search to see if the issue has already been reported.
 
 - For more discussion, please join the [quics discord](https://discord.gg/HRtY7pNZz2)
+
+
+
 

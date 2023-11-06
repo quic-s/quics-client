@@ -5,12 +5,16 @@ COPY go.mod go.sum ./
 RUN go mod download
 
 COPY . .
-RUN go build -o /bin/qic ./cmd
+RUN go build -o qic ./cmd
 
 EXPOSE 6121/udp
 
-WORKDIR /
-COPY .env ./bin
+ENV PATH="/quics-client:${PATH}"
+
+RUN chmod 777 /root
+RUN mkdir /dirs
+RUN chmod 777 /dirs
+
 VOLUME [ "/dirs" ]
 
 CMD [ "qic", "start" ]
