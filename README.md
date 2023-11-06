@@ -28,6 +28,7 @@ For make sync in real time, the Sync Metadata is saved in the local db, the **Ba
 #### 6. Extension
 **HTTP/3** is used for the each cobra command, except the controller command. And also, the API is used for the communication between the client and server. By using the HTTP/3 API, developers can easily integrate the GUI or other functions.
 
+> For more detail logic and implementation, please check [QUIC-S Docs](https://github.com/quic-s/quics/tree/main/docs)
 ## Getting Started
 
 ### 1. Docker
