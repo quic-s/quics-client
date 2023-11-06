@@ -4,6 +4,7 @@ quics-client is a client for the QUIC-S. It is **continuous file synchornization
 
  **NOTICE**  If you want to use this tool, you should use the server of QUIC-S. You can find the server in [here](https://github.com/quic-s/quics.git) 
 
+[Features](#features) | [Getting Started](#getting-started) | [How to use](#how-to-use) | [Contribute](#contribute)
 
 ## Features
 
@@ -32,12 +33,12 @@ For make sync in real time, the Sync Metadata is saved in the local db, the **Ba
 ### 1. Docker
     
 ```
-docker run -it -d -e PASSWORD=passwordwhatyouwant -v /path/to/your/dir:/data --name quics -p 6120:6120 -p 6121:6121/udp -p 6122:6122/udp quics/quics
+docker run -it -d  -v /path/to/your/dir:/dirs --name quics-client -p 6120:6120 -p 6121:6121/udp  quics/quics-client
 ```
 
 ### 2. Local Install
 
-- 1. Download the latest release from the [releases page]()
+- 1. Download the latest release from the [releases page](https://github.com/quic-s/quics-client/releases)
 - 2. Unpack the archive.
 - 3. Run `mv ./qic /usr/local/bin/qic`
 
