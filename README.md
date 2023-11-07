@@ -4,7 +4,7 @@ quics-client is a client for the QUIC-S. It is **continuous file synchornization
 
  **NOTICE**  If you want to use this tool, you should use the server of QUIC-S. You can find the server in [here](https://github.com/quic-s/quics.git) 
 
-[Features](#features) | [Getting Started](#getting-started) | [How to use](#how-to-use) | [Contribute](#contribute)
+[Features](#features) | [Getting Started](#getting-started) | [How to use](#how-to-use) | [Documentation](#documentation) | [Contribute](#contribute)
 
 ## Features
 
@@ -61,6 +61,10 @@ docker run -it -d  -v /path/to/your/dir:/dirs --name quics-client -p 6120:6120 -
 
 ## How to use
 
+> **Check the video for how to use** 
+>
+> [![quics-video](https://img.youtube.com/vi/0HYb-H82qXo/0.jpg)](https://youtu.be/0HYb-H82qXo)
+
 | Tag | Command | Options |     Description     | HTTP Method | Endpoint |
 | --- | --- | --- | --- | --- | --- |
 | controller | `qic start` | `--hport`  | start the program | X |  |
@@ -84,6 +88,10 @@ docker run -it -d  -v /path/to/your/dir:/dirs --name quics-client -p 6120:6120 -
 | history | `qic history download` | `--path`  `--version` | download the file of the root directory | POST | /api/v1/history/download |
 
 
+
+## Documentation
+For more detail logic and implementation, please check [QUIC-S Docs](https://github.com/quic-s/quics/tree/main/docs)
+Also you can check [quics](https://github.com/quic-s/quics) for server side and [quics-protocol](https://github.com/quic-s/quics-protocol) for protocol.
 
 ## Contribute
 QUIC-S is an open source project, and contributions of any kind are welcome and appreciated.
