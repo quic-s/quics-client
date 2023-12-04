@@ -61,9 +61,9 @@ docker run -it -d  -v /path/to/your/dir:/dirs --name quics-client -p 6120:6120 -
 
 ## How to use
 
-> **Check the video for how to use** 
+> **Check the video for how to use** (click)
 >
-> [![quics-video](https://img.youtube.com/vi/0HYb-H82qXo/0.jpg)](https://youtu.be/0HYb-H82qXo)
+> [![quics-video](https://img.youtube.com/vi/B5u2qiNFiV8/0.jpg)](https://youtu.be/B5u2qiNFiV8)
 
 | Tag | Command | Options |     Description     | HTTP Method | Endpoint |
 | --- | --- | --- | --- | --- | --- |
