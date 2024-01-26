@@ -4,16 +4,11 @@ import (
 	"github.com/dgraph-io/badger/v3"
 )
 
-type CRUD interface {
-	Update(key string, value []byte) error
-	View(key string) ([]byte, error)
-	Delete(key string) error
-}
-
-func Update(key string, value []byte) error {
+func (bg *Badger) Update(key string, value []byte) error {
+	mutex := &bg.Mutex
 	mutex.Lock()
 	defer mutex.Unlock()
-	return badgerdb.Update(func(txn *badger.Txn) error {
+	return bg.BadgerDB.Update(func(txn *badger.Txn) error {
 		if err := txn.Set([]byte(key), value); err != nil {
 			return err
 		}
@@ -21,12 +16,13 @@ func Update(key string, value []byte) error {
 	})
 }
 
-func View(key string) ([]byte, error) {
+func (bg *Badger) View(key string) ([]byte, error) {
+	mutex := &bg.Mutex
 	mutex.Lock()
 	defer mutex.Unlock()
 	var value []byte
 
-	err := badgerdb.View(func(txn *badger.Txn) error {
+	err := bg.BadgerDB.View(func(txn *badger.Txn) error {
 
 		item, err := txn.Get([]byte(key))
 		if err != nil {
@@ -44,10 +40,11 @@ func View(key string) ([]byte, error) {
 	return value, err
 }
 
-func Delete(key string) error {
+func (bg *Badger) Delete(key string) error {
+	mutex := &bg.Mutex
 	mutex.Lock()
 	defer mutex.Unlock()
-	err := badgerdb.Update(func(txn *badger.Txn) error {
+	err := bg.BadgerDB.Update(func(txn *badger.Txn) error {
 		err := txn.Delete([]byte(key))
 		return err
 	})

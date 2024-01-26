@@ -8,10 +8,11 @@ import (
 	"strings"
 
 	"github.com/dgraph-io/badger/v3"
+	"github.com/quic-s/quics-client/pkg/db/defaultdb"
 	"github.com/quic-s/quics-client/pkg/types"
 )
 
-func GetUUID() string {
+func (db *defaultdb.DB) GetUUID() string {
 	bUUID, err := View("UUID")
 	if err != nil {
 		log.Println(err)
