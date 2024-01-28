@@ -9,15 +9,12 @@ import (
 )
 
 // Declare a global variable for the DB.
-// var badgerdb *badger.DB
-// var mutex sync.Mutex
-
 type Badger struct {
 	BadgerDB *badger.DB
 	Mutex    sync.Mutex `wire:"-"` // ignore this field
 }
 
-func BadgerProvider() *Badger {
+func NewBadger() *Badger {
 	// Open the Badger database located in the ./badger directory.
 	// It will be created if it doesn't exist.
 	opts := badger.DefaultOptions(utils.GetQuicsDirPath() + "/badger")
@@ -25,16 +22,11 @@ func BadgerProvider() *Badger {
 	if err != nil {
 		log.Fatal(err)
 	}
-	return &Badger{ 
+	return &Badger{
 		BadgerDB: db,
 	}
-		
-}
 
-// Define a function to open the DB.
-// func (bg *Badger) OpenDB() {
-	
-// }
+}
 
 func (bg *Badger) CloseDB() {
 	if err := bg.BadgerDB.Close(); err != nil {

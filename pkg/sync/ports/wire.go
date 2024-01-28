@@ -1,14 +1,9 @@
 //go:build wireinject
 // +build wireinject
 
-package defaultdb
+package sync
 
 import "github.com/google/wire"
-
-// func ProvideCRUD() (*CRUD, error) {
-// 	wire.Build(CRUDProvider, wire.Bind(new(CRUD), new(*CRUD)))
-// 	return &CRUD{}, nil
-// }
 
 var set = wire.NewSet(
 	DBProvider,

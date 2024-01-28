@@ -4,7 +4,7 @@ import (
 	"github.com/dgraph-io/badger/v3"
 )
 
-func (bg *Badger) Update(key string, value []byte) error {
+func (bg *Badger) update(key string, value []byte) error {
 	mutex := &bg.Mutex
 	mutex.Lock()
 	defer mutex.Unlock()
@@ -16,7 +16,7 @@ func (bg *Badger) Update(key string, value []byte) error {
 	})
 }
 
-func (bg *Badger) View(key string) ([]byte, error) {
+func (bg *Badger) view(key string) ([]byte, error) {
 	mutex := &bg.Mutex
 	mutex.Lock()
 	defer mutex.Unlock()
@@ -40,7 +40,7 @@ func (bg *Badger) View(key string) ([]byte, error) {
 	return value, err
 }
 
-func (bg *Badger) Delete(key string) error {
+func (bg *Badger) delete(key string) error {
 	mutex := &bg.Mutex
 	mutex.Lock()
 	defer mutex.Unlock()

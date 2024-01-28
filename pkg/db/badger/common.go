@@ -51,7 +51,7 @@ func GetAllSyncMetadataInRoot(rootpath string) ([]*types.SyncMetadata, error) {
 	// get all file path in rootpath
 
 	prefix := rootpath
-	err := badgerdb.View(func(txn *badger.Txn) error {
+	err := View(func(txn *badger.Txn) error {
 		opts := badger.DefaultIteratorOptions
 		opts.PrefetchSize = 10
 		it := txn.NewIterator(opts)
