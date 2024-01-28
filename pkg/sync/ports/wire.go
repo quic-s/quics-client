@@ -3,15 +3,11 @@
 
 package sync
 
-import "github.com/google/wire"
-
-var set = wire.NewSet(
-	DBProvider,
-	Badger.BadgerProvider,
-	wire.Bind(new(CRUD), new(*Badger.Badger)),
+import (
+	"github.com/google/wire"
 )
 
 func injectDB() (*DB, error) {
-	panic(wire.Build(set))
+	panic(wire.Build(DBSet))
 
 }
