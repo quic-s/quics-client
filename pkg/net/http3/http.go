@@ -23,6 +23,8 @@ func RestServerStart(port string) {
 	fmt.Println("\t-----------------------------------------\n")
 
 	log.Println("quics-client : starting port " + viper.GetViperEnvVariables("REST_SERVER_PORT"))
+
+	//TODO bagder injection
 	badger.OpenDB()
 
 	sync.InitWatcher()

@@ -1,12 +1,10 @@
 package sync
 
 import (
-	"github.com/google/wire"
-	"github.com/quic-s/quics-client/pkg/db/badger"
 	"github.com/quic-s/quics-client/pkg/types"
 )
 
-type DBDo interface {
+type Repository interface {
 	GetUUID() string
 	GetSyncMetadata(path string) types.SyncMetadata
 	IsSyncMetadataExisted(path string) bool
@@ -20,20 +18,3 @@ type DBDo interface {
 	UpdateRootdirToRegistered(path string) error
 	DeleteRootDir(path string)
 }
-
-// TODO : DB -> APP
-type DB struct {
-	dbdo DBDo
-}
-
-func DBProvider(dbdo DBDo) *DB {
-	return &DB{
-		dbdo: dbdo,
-	}
-}
-
-var DBSet = wire.NewSet(
-	badger.BadgerProvider,
-	DBProvider,
-	wire.Bind(new(DBDo), new(*badger.Badger)),
-)
