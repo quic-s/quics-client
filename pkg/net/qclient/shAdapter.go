@@ -5,7 +5,7 @@ import (
 	qstypes "github.com/quic-s/quics/pkg/types"
 )
 
-func (qc *QPClient) sendLinkShare(stream *qp.Stream, UUID string, AfterPath string, MaxCnt uint64) (*qstypes.ShareRes, error) {
+func (qc *QPClient) SendLinkShare(stream *qp.Stream, UUID string, AfterPath string, MaxCnt uint64) (*qstypes.ShareRes, error) {
 	breq := qstypes.ShareReq{
 		UUID:      UUID,
 		AfterPath: AfterPath,

@@ -1,11 +1,11 @@
 package qclient
 
 import (
-	"github.com/quic-s/quics-protocol/pkg/stream"
+	qp "github.com/quic-s/quics-protocol"
 	qstypes "github.com/quic-s/quics/pkg/types"
 )
 
-func (qc *QPClient) AskAllMetaRecvHandler(stream *stream.Stream) (*qstypes.AskAllMetaReq, error) {
+func (qc *QPClient) AskAllMetaRecvHandler(stream *qp.Stream) (*qstypes.AskAllMetaReq, error) {
 	data, err := stream.RecvBMessage()
 	if err != nil {
 		return nil, err
@@ -18,7 +18,7 @@ func (qc *QPClient) AskAllMetaRecvHandler(stream *stream.Stream) (*qstypes.AskAl
 
 }
 
-func (qc *QPClient) AskAllMetaHandler(stream *stream.Stream, UUID string, syncMetaList []qstypes.SyncMetadata) error {
+func (qc *QPClient) AskAllMetaHandler(stream *qp.Stream, UUID string, syncMetaList []qstypes.SyncMetadata) error {
 
 	bres := qstypes.AskAllMetaRes{
 		UUID:         UUID,
@@ -35,7 +35,7 @@ func (qc *QPClient) AskAllMetaHandler(stream *stream.Stream, UUID string, syncMe
 	return nil
 }
 
-func (qc *QPClient) SendRescan(stream *stream.Stream, UUID string, RootAfterPath []string) (*qstypes.RescanRes, error) {
+func (qc *QPClient) SendRescan(stream *qp.Stream, UUID string, RootAfterPath []string) (*qstypes.RescanRes, error) {
 	bres := qstypes.RescanReq{
 		UUID:          UUID,
 		RootAfterPath: RootAfterPath,

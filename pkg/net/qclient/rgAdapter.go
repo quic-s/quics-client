@@ -78,7 +78,7 @@ func (qc *QPClient) SendRootDirRegister(stream *qp.Stream, UUID string, RootDirP
 	return res, nil
 
 }
-func (qc *QPClient) SendDisconnectRootDir(stream *qp.Stream, UUID string, AfterPath string) (qstypes.DisconnectRootDirRes, error) {
+func (qc *QPClient) SendDisconnectRootDir(stream *qp.Stream, UUID string, AfterPath string) (*qstypes.DisconnectRootDirRes, error) {
 	breq := qstypes.DisconnectRootDirReq{
 		UUID:      UUID,
 		AfterPath: AfterPath,
@@ -86,48 +86,48 @@ func (qc *QPClient) SendDisconnectRootDir(stream *qp.Stream, UUID string, AfterP
 
 	req, err := breq.Encode()
 	if err != nil {
-		return qstypes.DisconnectRootDirRes{}, err
+		return &qstypes.DisconnectRootDirRes{}, err
 	}
 
 	err = stream.SendBMessage(req)
 	if err != nil {
 
-		return qstypes.DisconnectRootDirRes{}, err
+		return &qstypes.DisconnectRootDirRes{}, err
 	}
 
 	bres, err := stream.RecvBMessage()
 	if err != nil {
 
-		return qstypes.DisconnectRootDirRes{}, err
+		return &qstypes.DisconnectRootDirRes{}, err
 	}
 
 	res := qstypes.DisconnectRootDirRes{}
 	res.Decode(bres)
 
-	return res, nil
+	return &res, nil
 
 }
 
-func (qc *QPClient) SendDisconnectClient(stream *qp.Stream, UUID string) (qstypes.DisconnectClientRes, error) {
+func (qc *QPClient) SendDisconnectClient(stream *qp.Stream, UUID string) (*qstypes.DisconnectClientRes, error) {
 	breq := qstypes.DisconnectClientReq{
 		UUID: UUID,
 	}
 
 	req, err := breq.Encode()
 	if err != nil {
-		return qstypes.DisconnectClientRes{}, err
+		return &qstypes.DisconnectClientRes{}, err
 	}
 	err = stream.SendBMessage(req)
 	if err != nil {
-		return qstypes.DisconnectClientRes{}, err
+		return &qstypes.DisconnectClientRes{}, err
 	}
 
 	bres, err := stream.RecvBMessage()
 	if err != nil {
-		return qstypes.DisconnectClientRes{}, err
+		return &qstypes.DisconnectClientRes{}, err
 	}
 
 	res := qstypes.DisconnectClientRes{}
 	res.Decode(bres)
-	return res, nil
+	return &res, nil
 }
