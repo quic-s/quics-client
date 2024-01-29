@@ -9,7 +9,7 @@ import (
 	qstypes "github.com/quic-s/quics/pkg/types"
 )
 
-func SendChooseOne(stream *qp.Stream, UUID string, AfterPath string, side string) (*qstypes.PleaseFileRes, error) {
+func (qc *QPClient) SendChooseOne(stream *qp.Stream, UUID string, AfterPath string, side string) (*qstypes.PleaseFileRes, error) {
 
 	breq := qstypes.PleaseFileReq{
 		UUID:      UUID,
@@ -35,7 +35,7 @@ func SendChooseOne(stream *qp.Stream, UUID string, AfterPath string, side string
 
 }
 
-func SendAskConflictList(stream *qp.Stream, UUID string) (*qstypes.AskConflictListRes, error) {
+func (qc *QPClient) SendAskConflictList(stream *qp.Stream, UUID string) (*qstypes.AskConflictListRes, error) {
 	breq := qstypes.AskConflictListReq{
 		UUID: UUID,
 	}
@@ -59,7 +59,7 @@ func SendAskConflictList(stream *qp.Stream, UUID string) (*qstypes.AskConflictLi
 
 }
 
-func SendConflictDownload(stream *qp.Stream, UUID string, AfterPath string) ([]*qstypes.ConflictDownloadReq, error) {
+func (qc *QPClient) SendConflictDownload(stream *qp.Stream, UUID string, AfterPath string) ([]*qstypes.ConflictDownloadReq, error) {
 
 	breq := qstypes.AskStagingNumReq{
 		UUID:      UUID,

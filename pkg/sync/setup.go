@@ -6,36 +6,23 @@ import (
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/google/wire"
-
-	qp "github.com/quic-s/quics-protocol"
 )
 
 const PSMutModNum uint8 = 16
 
 var ServiceSet = wire.NewSet(
-	NewMutex,
-	NewQPClient,
-	NewWatcher,
-	wire.Struct(new(Service), "*"),
+// TODO
 )
 
 type Service struct {
-	Conn     *qp.Connection `wire:"-"` // ignore this field when inject
-	QPClient *qp.QP
-	Watcher  *fsnotify.Watcher
-	PSMut    map[byte]*sync.Mutex
-	db       Repository
+	Watcher *fsnotify.Watcher
+	PSMut   map[byte]*sync.Mutex
+	db      Repository
+	qclient QPPort
 	//TODO http
 }
 
-func NewService(conn *qp.Connection, qpClient *qp.QP, watcher *fsnotify.Watcher, pSMut map[byte]*sync.Mutex) *Service {
-	return &Service{
-		Conn:     conn,
-		QPClient: qpClient,
-		Watcher:  watcher,
-		PSMut:    pSMut,
-	}
-}
+//TODO ServiceProvider
 
 func NewMutex() map[byte]*sync.Mutex {
 
@@ -53,24 +40,10 @@ func NewMutex() map[byte]*sync.Mutex {
 	return pSMut
 }
 
-func NewQPClient() *qp.QP {
-	//newClient, err := qp.New(qp.LOG_LEVEL_INFO)
-	newClient, err := qp.New(qp.LOG_LEVEL_ERROR)
-	if err != nil {
-		panic(err)
-	}
-	return newClient
-}
-
 func NewWatcher() *fsnotify.Watcher {
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		log.Fatal(err)
 	}
 	return watcher
-}
-
-func (sv *Service) closeConnect() {
-	sv.Conn.Close()
-	sv.Conn = nil
 }

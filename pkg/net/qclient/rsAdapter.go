@@ -7,7 +7,7 @@ import (
 	qstypes "github.com/quic-s/quics/pkg/types"
 )
 
-func SendPing(stream *qp.Stream, UUID string) (*qstypes.Ping, error) {
+func (qc *QPClient) SendPing(stream *qp.Stream, UUID string) (*qstypes.Ping, error) {
 
 	req := qstypes.Ping{
 		UUID: UUID,

@@ -16,6 +16,9 @@ import (
 	"github.com/quic-s/quics-client/pkg/viper"
 )
 
+func Http3ServerProvider() {
+
+}
 func RestServerStart(port string) {
 
 	fmt.Println("\t-----------------------------------------\n")
