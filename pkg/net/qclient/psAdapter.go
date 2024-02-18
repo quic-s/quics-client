@@ -5,7 +5,7 @@ import (
 	qstypes "github.com/quic-s/quics/pkg/types"
 )
 
-func SendPleaseSync(stream *qp.Stream, UUID string, Event string, AfterPath string, LastUpdateTimestamp uint64, LastUpdateHash string, LastSyncHash string, fileMetadata qstypes.FileMetadata) (*qstypes.PleaseSyncRes, error) {
+func (qc *QPClient) SendPleaseSync(stream *qp.Stream, UUID string, Event string, AfterPath string, LastUpdateTimestamp uint64, LastUpdateHash string, LastSyncHash string, fileMetadata qstypes.FileMetadata) (*qstypes.PleaseSyncRes, error) {
 
 	breq := qstypes.PleaseSyncReq{
 		UUID:                UUID,
@@ -36,7 +36,7 @@ func SendPleaseSync(stream *qp.Stream, UUID string, Event string, AfterPath stri
 
 }
 
-func SendPleaseTake(stream *qp.Stream, UUID string, AfterPath string, path string) (*qstypes.PleaseTakeRes, error) {
+func (qc *QPClient) SendPleaseTake(stream *qp.Stream, UUID string, AfterPath string, path string) (*qstypes.PleaseTakeRes, error) {
 	res := qstypes.PleaseTakeRes{}
 	breq := qstypes.PleaseTakeReq{
 		UUID:      UUID,

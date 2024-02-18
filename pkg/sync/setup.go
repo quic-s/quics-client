@@ -5,51 +5,45 @@ import (
 	"sync"
 
 	"github.com/fsnotify/fsnotify"
-
-	qp "github.com/quic-s/quics-protocol"
+	"github.com/google/wire"
 )
 
-var (
-	QPClient    *qp.QP
-	Conn        *qp.Connection
-	Watcher     *fsnotify.Watcher
-	PSMut       map[byte]*sync.Mutex
-	PSMutModNum uint8 = 64
+const PSMutModNum uint8 = 16
+
+var ServiceSet = wire.NewSet(
+// TODO
 )
 
-func init() {
-
-	// InitQPClient()
-
+type Service struct {
+	Watcher *fsnotify.Watcher
+	PSMut   map[byte]*sync.Mutex
+	db      Repository
+	qclient QPPort
+	//TODO http
 }
-func InitQPClient() {
-	//newClient, err := qp.New(qp.LOG_LEVEL_INFO)
-	newClient, err := qp.New(qp.LOG_LEVEL_ERROR)
-	if err != nil {
-		panic(err)
-	}
-	QPClient = newClient
 
-	PSMut = make(map[byte]*sync.Mutex)
+//TODO ServiceProvider
+
+func NewMutex() map[byte]*sync.Mutex {
+
+	pSMut := make(map[byte]*sync.Mutex)
 	for i := uint8(0); i < PSMutModNum; i++ {
-		PSMut[i] = &sync.Mutex{}
+		pSMut[i] = &sync.Mutex{}
 	}
 
+	// TODO when initiate
 	MustSyncMain()
 	ForceSyncMain()
 	FullScanMain()
 	NeedContentMain()
+
+	return pSMut
 }
-func InitWatcher() {
-	// Create a new watcher.
-	err := error(nil)
-	Watcher, err = fsnotify.NewWatcher()
+
+func NewWatcher() *fsnotify.Watcher {
+	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		log.Fatal(err)
 	}
-}
-
-func CloseConnect() {
-	Conn.Close()
-	Conn = nil
+	return watcher
 }

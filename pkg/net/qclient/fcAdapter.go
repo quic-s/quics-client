@@ -12,10 +12,9 @@ import (
 	qstypes "github.com/quic-s/quics/pkg/types"
 )
 
-func ForceSyncRecvHandler(stream *qp.Stream) (*qstypes.MustSyncReq, string, error) {
+func (qc *QPClient) ForceSyncRecvHandler(stream *qp.Stream, badger *badger.Badger) (*qstypes.MustSyncReq, string, error) {
 
 	data, fileInfo, fileContent, err := stream.RecvFileBMessage()
-
 	if err != nil {
 		log.Println("", err)
 		return nil, "", err
@@ -69,7 +68,7 @@ func ForceSyncRecvHandler(stream *qp.Stream) (*qstypes.MustSyncReq, string, erro
 
 }
 
-func ForceSyncHandler(stream *qp.Stream, UUID string, AfterPath string, LastSyncTimestamp uint64, LastSyncHash string) error {
+func (qc *QPClient) ForceSyncHandler(stream *qp.Stream, UUID string, AfterPath string, LastSyncTimestamp uint64, LastSyncHash string) error {
 	bres := qstypes.MustSyncRes{
 		UUID:                UUID,
 		AfterPath:           AfterPath,

@@ -12,7 +12,7 @@ import (
 	qstypes "github.com/quic-s/quics/pkg/types"
 )
 
-func MustSyncRecvHandler(stream *qp.Stream) (*qstypes.MustSyncReq, error) {
+func (qc *QPClient) MustSyncRecvHandler(stream *qp.Stream) (*qstypes.MustSyncReq, error) {
 
 	data, err := stream.RecvBMessage()
 	if err != nil {
@@ -24,7 +24,7 @@ func MustSyncRecvHandler(stream *qp.Stream) (*qstypes.MustSyncReq, error) {
 
 }
 
-func MustSyncHandler(stream *qp.Stream, UUID string, AfterPath string, LastSyncTimestamp uint64, LastSyncHash string) error {
+func (qc *QPClient) MustSyncHandler(stream *qp.Stream, UUID string, AfterPath string, LastSyncTimestamp uint64, LastSyncHash string) error {
 	bres := qstypes.MustSyncRes{
 		UUID:                UUID,
 		AfterPath:           AfterPath,
@@ -46,7 +46,7 @@ func MustSyncHandler(stream *qp.Stream, UUID string, AfterPath string, LastSyncT
 
 }
 
-func GiveYouRecvHandler(stream *qp.Stream, path string, afterPath string, hash string, Isremoved bool) (*qstypes.GiveYouReq, error) {
+func (qc *QPClient) GiveYouRecvHandler(stream *qp.Stream, path string, afterPath string, hash string, Isremoved bool) (*qstypes.GiveYouReq, error) {
 	data, fileInfo, fileContent, err := stream.RecvFileBMessage()
 
 	if err != nil {
@@ -128,7 +128,7 @@ func GiveYouRecvHandler(stream *qp.Stream, path string, afterPath string, hash s
 	return &req, nil
 }
 
-func GiveYouHandler(stream *qp.Stream, UUID string, AfterPath string, LastSyncTimestamp uint64, LastSyncHash string) error {
+func (qc *QPClient) GiveYouHandler(stream *qp.Stream, UUID string, AfterPath string, LastSyncTimestamp uint64, LastSyncHash string) error {
 
 	bres := qstypes.GiveYouRes{
 		UUID:              UUID,
@@ -149,7 +149,7 @@ func GiveYouHandler(stream *qp.Stream, UUID string, AfterPath string, LastSyncTi
 	return nil
 }
 
-func NeedContentRecvHandler(stream *qp.Stream) (*qstypes.NeedContentReq, error) {
+func (qc *QPClient) NeedContentRecvHandler(stream *qp.Stream) (*qstypes.NeedContentReq, error) {
 
 	data, err := stream.RecvBMessage()
 	if err != nil {
@@ -161,7 +161,7 @@ func NeedContentRecvHandler(stream *qp.Stream) (*qstypes.NeedContentReq, error) 
 
 }
 
-func NeedContentHandler(stream *qp.Stream, path string, UUID string, AfterPath string, LastUpdateTimestamp uint64, LastUpdateHash string) error {
+func (qc *QPClient) NeedContentHandler(stream *qp.Stream, path string, UUID string, AfterPath string, LastUpdateTimestamp uint64, LastUpdateHash string) error {
 
 	bres := qstypes.NeedContentRes{
 		UUID:                UUID,

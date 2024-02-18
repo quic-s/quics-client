@@ -8,11 +8,14 @@ import (
 	"strings"
 
 	"github.com/dgraph-io/badger/v3"
+
 	"github.com/quic-s/quics-client/pkg/types"
 )
 
-func GetUUID() string {
-	bUUID, err := View("UUID")
+/*--------------USER INFO ----------------*/
+
+func (db *Badger) GetUUID() string {
+	bUUID, err := db.view("UUID")
 	if err != nil {
 		log.Println(err)
 	}
@@ -23,8 +26,8 @@ func GetUUID() string {
 /*--------------SYNC METADATA ----------------*/
 
 // TODO NIL 반환 , 즉 아래 두개 함수를 합쳐야함
-func GetSyncMetadata(path string) types.SyncMetadata {
-	bsyncMetadata, err := View(path)
+func (db *Badger) GetSyncMetadata(path string) types.SyncMetadata {
+	bsyncMetadata, err := db.view(path)
 	if err != nil {
 		return types.SyncMetadata{}
 	}
@@ -34,8 +37,8 @@ func GetSyncMetadata(path string) types.SyncMetadata {
 
 }
 
-func IsSyncMetadataExisted(path string) bool {
-	syncMetadata := GetSyncMetadata(path)
+func (db *Badger) IsSyncMetadataExisted(path string) bool {
+	syncMetadata := db.GetSyncMetadata(path)
 	if reflect.ValueOf(syncMetadata).IsZero() {
 		return false
 	}
@@ -44,13 +47,13 @@ func IsSyncMetadataExisted(path string) bool {
 
 // Get All SyncMetadata in certain rootpath
 // e.g. GetAllSyncMetadataInRoot("/home/username/rootdir")
-func GetAllSyncMetadataInRoot(rootpath string) ([]*types.SyncMetadata, error) {
+func (db *Badger) GetAllSyncMetadataInRoot(rootpath string) ([]*types.SyncMetadata, error) {
 	syncMetadataList := []*types.SyncMetadata{}
 
 	// get all file path in rootpath
 
 	prefix := rootpath
-	err := badgerdb.View(func(txn *badger.Txn) error {
+	err := db.BadgerDB.View(func(txn *badger.Txn) error {
 		opts := badger.DefaultIteratorOptions
 		opts.PrefetchSize = 10
 		it := txn.NewIterator(opts)
@@ -80,11 +83,11 @@ func GetAllSyncMetadataInRoot(rootpath string) ([]*types.SyncMetadata, error) {
 
 // Get All SyncMetadata in all rootpath
 // e.g. GetAllSyncMetadataAmongRoot()
-func GetAllSyncMetadataAmongRoot() ([]*types.SyncMetadata, error) {
+func (db *Badger) GetAllSyncMetadataAmongRoot() ([]*types.SyncMetadata, error) {
 	syncMetadataList := []*types.SyncMetadata{}
-	rootDirList := GetRootDirList()
+	rootDirList := db.GetRootDirList()
 	for _, rootDir := range rootDirList {
-		syncMetadata, err := GetAllSyncMetadataInRoot(rootDir.Path)
+		syncMetadata, err := db.GetAllSyncMetadataInRoot(rootDir.Path)
 		if err != nil {
 			return nil, err
 		}
@@ -96,8 +99,8 @@ func GetAllSyncMetadataAmongRoot() ([]*types.SyncMetadata, error) {
 /*------------ROOT DIRECTORY---------------- */
 
 // key : value == string : []RootDir
-func GetRootDirList() []types.RootDir {
-	bRootDirList, err := View("RootDirList")
+func (db *Badger) GetRootDirList() []types.RootDir {
+	bRootDirList, err := db.view("RootDirList")
 	if err != nil {
 		return []types.RootDir{}
 	}
@@ -109,8 +112,8 @@ func GetRootDirList() []types.RootDir {
 
 }
 
-func GetRootDir(path string) types.RootDir {
-	rootDirList := GetRootDirList()
+func (db *Badger) GetRootDir(path string) types.RootDir {
+	rootDirList := db.GetRootDirList()
 	for _, rootDir := range rootDirList {
 		if rootDir.Path == path {
 			return rootDir
@@ -119,8 +122,8 @@ func GetRootDir(path string) types.RootDir {
 	return types.RootDir{}
 }
 
-func GetBeforePathWithAfterPath(afterPath string) string {
-	rootDirList := GetRootDirList()
+func (db *Badger) GetBeforePathWithAfterPath(afterPath string) string {
+	rootDirList := db.GetRootDirList()
 	rootbase := strings.Split(afterPath, "/")[1]
 	for _, rootDir := range rootDirList {
 		if rootDir.AfterPath == "/"+rootbase {
@@ -130,8 +133,8 @@ func GetBeforePathWithAfterPath(afterPath string) string {
 	return ""
 }
 
-func SplitBeforeAfterRoot(path string) (string, string) {
-	rootDirList := GetRootDirList()
+func (db *Badger) SplitBeforeAfterRoot(path string) (string, string) {
+	rootDirList := db.GetRootDirList()
 	for _, rootDir := range rootDirList {
 		if strings.HasPrefix(path, rootDir.BeforePath) {
 			return rootDir.BeforePath, strings.TrimPrefix(path, rootDir.BeforePath)
@@ -140,11 +143,11 @@ func SplitBeforeAfterRoot(path string) (string, string) {
 	return "", ""
 }
 
-func AddRootDir(path string) error {
+func (db *Badger) AddRootDir(path string) error {
 
 	//If Same Absolute Path is already exist, return
 	//If Same Nickname is already taken , return
-	rootDirList := GetRootDirList()
+	rootDirList := db.GetRootDirList()
 	for _, rootDir := range rootDirList {
 		if rootDir.Path == path || rootDir.NickName == filepath.Base(path) {
 			return fmt.Errorf("this Directory is already exist as Root")
@@ -163,15 +166,15 @@ func AddRootDir(path string) error {
 
 	newRootDirList := types.RootDirList{}
 	newRootDirList = append(rootDirList, rootDir)
-	err := Update("RootDirList", newRootDirList.Encode())
+	err := db.update("RootDirList", newRootDirList.Encode())
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func UpdateRootdirToRegistered(path string) error {
-	rootDirList := GetRootDirList()
+func (db *Badger) UpdateRootdirToRegistered(path string) error {
+	rootDirList := db.GetRootDirList()
 	// Update IsRegistered
 	newRootDirList := types.RootDirList{}
 	for _, rootDir := range rootDirList {
@@ -190,15 +193,15 @@ func UpdateRootdirToRegistered(path string) error {
 		}
 		newRootDirList = append(newRootDirList, rootDir)
 	}
-	err := Update("RootDirList", newRootDirList.Encode())
+	err := db.update("RootDirList", newRootDirList.Encode())
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func DeleteRootDir(path string) {
-	rootDirList := GetRootDirList()
+func (db *Badger) DeleteRootDir(path string) {
+	rootDirList := db.GetRootDirList()
 	newRootDirList := types.RootDirList{}
 	for i, rootDir := range rootDirList {
 		if rootDir.Path == path {
@@ -207,5 +210,5 @@ func DeleteRootDir(path string) {
 		}
 	}
 
-	Update("RootDirList", newRootDirList.Encode())
+	db.update("RootDirList", newRootDirList.Encode())
 }

@@ -76,7 +76,7 @@ docker run -it -d  -v /path/to/your/dir:/dirs --name quics-client -p 6120:6120 -
 | connect | `qic connect root` | `--remote` `--password`  |   connect to the remote root directory | POST | /api/v1/connect/root/remote |
 | connect | `qic connect list-remote` |  | get the list of remote root directory | GET | /api/v1/connect/list/remote |
 | disconnect | `qic disconnect root` | `--path` | disconnect to the root directory | POST | /api/v1/disconnect/root |
-| sync | `qic sync status` | `--path` | get the status of the root directory | POST | /api/v1/sync/status |
+| sync | `qic sync status` |y  `--path` | get the status of the root directory | POST | /api/v1/sync/status |
 | sync | `qic sync rescan` |  | rescan the all of root directory | POST | /api/v1/sync/rescan |
 | conflict | `qic conflict list` |   | get the list of the root directory | GET | /api/v1/conflict/list |
 | conflict | `qic conflict choose` | `--path` `--candidate` | choose the file of the root directory | POST | /api/v1/conflict/choose |

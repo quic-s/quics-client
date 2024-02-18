@@ -9,7 +9,7 @@ import (
 	qstypes "github.com/quic-s/quics/pkg/types"
 )
 
-func SendRollBack(stream *qp.Stream, UUID string, AfterPath string, Version uint64) (*qstypes.RollBackRes, error) {
+func (qc *QPClient) SendRollBack(stream *qp.Stream, UUID string, AfterPath string, Version uint64) (*qstypes.RollBackRes, error) {
 	breq := qstypes.RollBackReq{
 		UUID:      UUID,
 		AfterPath: AfterPath,
@@ -35,7 +35,7 @@ func SendRollBack(stream *qp.Stream, UUID string, AfterPath string, Version uint
 	return rollbackRes, nil
 }
 
-func SendShowHistory(stream *qp.Stream, UUID string, Afterpath string, CntFromHead uint64) (*qstypes.ShowHistoryRes, error) {
+func (qc *QPClient) SendShowHistory(stream *qp.Stream, UUID string, Afterpath string, CntFromHead uint64) (*qstypes.ShowHistoryRes, error) {
 
 	breq := qstypes.ShowHistoryReq{
 		UUID:        UUID,
@@ -62,7 +62,7 @@ func SendShowHistory(stream *qp.Stream, UUID string, Afterpath string, CntFromHe
 	return showHistoryRes, nil
 }
 
-func SendDownloadHistory(stream *qp.Stream, UUID string, AfterPath string, Version uint64) (*qstypes.DownloadHistoryRes, error) {
+func (qc *QPClient) SendDownloadHistory(stream *qp.Stream, UUID string, AfterPath string, Version uint64) (*qstypes.DownloadHistoryRes, error) {
 
 	breq := qstypes.DownloadHistoryReq{
 		UUID:      UUID,
